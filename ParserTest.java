@@ -13,8 +13,9 @@ class ParserTest {
             System.out.print("Parse start\n");
             parser.parse();
             System.out.print("Parse complete\n");
-            for (int i = 0; i < parser.words.size(); i++) {
-                System.out.println(parser.symbols.get(i) + "\t" + parser.words.get(i));
+            for (Token t: parser.table
+                 ) {
+                System.out.print(t.token + "\t" + t.symbol + "\n");
             }
         } catch (IOException | ParseException e) {
             System.out.print(e);

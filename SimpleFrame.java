@@ -71,8 +71,9 @@ public class SimpleFrame extends JFrame {
                     Parser parser = new Parser(fileName);
                     parser.parse();
                     jTextArear.append(String.format("%-24s%-24s%-24s\n", "单词", "类别", "值"));
-                    for (int i = 0; i < parser.words.size(); ++i) {
-                        jTextArear.append(String.format("%-24s%-24s%-24s\n", parser.words.get(i), parser.symbols.get(i), parser.words.get(i)));
+                    for (int i = 0; i < parser.table.size(); ++i) {
+                        Token token = parser.table.get(i);
+                        jTextArear.append(String.format("%-24s%-24s%-24s\n", token.token, token.symbol, token.token));
                     }
                 }
             } catch (FileNotFoundException e1) {

@@ -1,26 +1,16 @@
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Parser {
-    private static final String[] KEYWORD = new String[]{
-            "const", "var", "procedure", "odd", "if", "then", "begin",
-            "end", "repeat", "until", "read", "write"
-    };
-    private static final HashSet<String> KEYWORDS = new HashSet<String>(Arrays.asList(KEYWORD));
-    public ArrayList<Symbol> symbols;
-    public ArrayList<String> words;
     private PushbackReader reader;
+    public ArrayList<Token> table;
 
-    public Parser(String filename) throws FileNotFoundException{
+    public Parser(String filename) throws FileNotFoundException {
         this.reader = new PushbackReader(new FileReader(filename), 10);
-        this.symbols = new ArrayList<>();
-        this.words = new ArrayList<>();
+        this.table = new ArrayList<>();
     }
 
-    private String readIdentifier() throws IOException{
+    private String readIdentifier() throws IOException {
         StringBuilder res = new StringBuilder();
         int c = reader.read();
         while (Character.isLetter(c) || Character.isDigit(c)) {
@@ -31,7 +21,7 @@ public class Parser {
         return res.toString();
     }
 
-    private String readNumber() throws IOException{
+    private String readNumber() throws IOException {
         StringBuilder res = new StringBuilder();
         int c = reader.read();
         while (Character.isDigit(c)) {
@@ -55,12 +45,12 @@ public class Parser {
         return res.toString();
     }
 
-    private String readLess() throws IOException{
+    private String readLess() throws IOException {
         int c = reader.read();
         int next = reader.read();
         if (next == '>') {
             return "<>";
-        } else if (next == '='){
+        } else if (next == '=') {
             return "<=";
         } else {
             reader.unread(next);
@@ -79,7 +69,7 @@ public class Parser {
         }
     }
 
-    private String readColon() throws IOException, ParseException{
+    private String readColon() throws IOException, ParseException {
         int c = reader.read();
         int next = reader.read();
         if (next == '=') {
@@ -89,49 +79,50 @@ public class Parser {
         return ":";
     }
 
-    private void HandleSingleChar() throws ParseException, IOException {
+    private Symbol HandleSingleChar() throws ParseException, IOException {
         int c = reader.read();
+        Symbol symbol = Symbol.None;
         switch (c) {
             case '(':
-                symbols.add(Symbol.LeftParentheses);
+                symbol = Symbol.LeftParentheses;
                 break;
             case ')':
-                symbols.add(Symbol.RightParentheses);
+                symbol = Symbol.RightParentheses;
                 break;
             case '+':
-                symbols.add(Symbol.Plus);
+                symbol = Symbol.Plus;
                 break;
             case '-':
-                symbols.add(Symbol.Minus);
+                symbol = Symbol.Minus;
                 break;
             case '*':
-                symbols.add(Symbol.Star);
+                symbol = Symbol.Star;
                 break;
             case '/':
-                symbols.add(Symbol.Divide);
+                symbol = Symbol.Divide;
                 break;
             case '=':
-                symbols.add(Symbol.Equal);
+                symbol = Symbol.Equal;
                 break;
             case ';':
-                symbols.add(Symbol.Semi);
+                symbol = Symbol.SemiColon;
                 break;
             case '.':
-                symbols.add(Symbol.Period);
+                symbol = Symbol.Period;
                 break;
             case ',':
-                symbols.add(Symbol.Comma);
+                symbol = Symbol.Comma;
                 break;
             default:
-                if (!Character.isWhitespace(c)) {
-                    throw new ParseException(String.format("%c is not a valid symbol", c));
-                }
+                throw new ParseException(String.format("%c is not a valid symbol", c));
         }
+        return symbol;
     }
 
-    public void parse() throws IOException, ParseException{
+    public void parse() throws IOException, ParseException {
         int c;
         String word;
+        Symbol symbol;
         while ((c = reader.read()) != -1) {
             while (Character.isWhitespace(c)) {
                 c = reader.read();
@@ -139,53 +130,48 @@ public class Parser {
             reader.unread(c);
             if (Character.isLetter(c)) {
                 word = readIdentifier();
-                if (KEYWORDS.contains(word)) {
-                    symbols.add(Symbol.Keyword);
-                } else {
-                    symbols.add(Symbol.Identifier);
+                // 如果不在保留字表里，则说明是标识符
+                symbol = Token.getKeywordSymbol(word);
+                if (symbol == Symbol.None) {
+                    symbol = Symbol.Identifier;
                 }
             } else if (Character.isDigit(c)) {
                 word = readNumber();
                 // 有无小数点
                 if (word.indexOf('.') != -1) {
-                    symbols.add(Symbol.Float);
+                    symbol = Symbol.Float;
                 } else {
-                    symbols.add(Symbol.Integer);
+                    symbol = Symbol.Integer;
                 }
             } else if (c == ':') {
                 word = readColon();
                 if (word.length() == 2) {
-                    symbols.add(Symbol.Assign);
+                    symbol = Symbol.Assign;
                 } else {
                     throw new ParseException(": is not a valid symbol");
                 }
             } else if (c == '<') {
                 word = readLess();
                 if (word.length() < 2) {
-                    symbols.add(Symbol.Less);
+                    symbol = Symbol.Less;
                 } else if (word.charAt(1) == '>') {
-                    symbols.add(Symbol.Unequal);
+                    symbol = Symbol.Unequal;
                 } else {
-                    symbols.add(Symbol.LessEqual);
+                    symbol = Symbol.LessEqual;
                 }
             } else if (c == '>') {
                 word = readGreater();
                 if (word.length() < 2) {
-                    symbols.add(Symbol.Greater);
+                    symbol = Symbol.Greater;
                 } else {
-                    symbols.add(Symbol.GreaterEqual);
+                    symbol = Symbol.GreaterEqual;
                 }
             } else {
                 word = Character.toString((char) c);
-                HandleSingleChar();
+                symbol = HandleSingleChar();
             }
-            words.add(word);
+            table.add(new Token(word, symbol));
         }
         reader.close();
     }
-}
-
-enum Symbol {
-    Keyword, Identifier, Integer, Float, Semi, Comma, Plus, Minus, Star, Divide, LeftParentheses, RightParentheses,
-    Assign, Less, Equal, LessEqual, Greater, GreaterEqual, Unequal, Period,
 }

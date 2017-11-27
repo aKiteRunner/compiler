@@ -3,8 +3,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.text.ParseException;
 
 public class SimpleFrame extends JFrame {
     //打开的文件的名字
@@ -68,18 +67,21 @@ public class SimpleFrame extends JFrame {
         public void actionPerformed(ActionEvent e) {
             try {
                 if (fileName != null) {
-                    Parser parser = new Parser(fileName);
-                    parser.parse();
+                    Lexer lexer = new Lexer(fileName);
+                    lexer.lex();
                     jTextArear.append(String.format("%-24s%-24s%-24s\n", "单词", "类别", "值"));
-                    for (int i = 0; i < parser.table.size(); ++i) {
-                        Token token = parser.table.get(i);
+                    for (int i = 0; i < lexer.table.size(); ++i) {
+                        Token token = lexer.table.get(i);
                         jTextArear.append(String.format("%-24s%-24s%-24s\n", token.token, token.symbol, token.token));
                     }
                 }
             } catch (FileNotFoundException e1) {
                 jTextArear.setText("文件不存在: " + fileName);
-            } catch (IOException | ParseException e1) {
+            } catch (IOException e1) {
                 jTextArear.setText(e1.toString());
+            } catch (LexException e1) {
+                jTextArear.setText("源代码出现错误\n");
+                jTextArear.append(e1.toString());
             }
         }
     }

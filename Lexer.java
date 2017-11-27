@@ -1,13 +1,17 @@
 import java.io.*;
 import java.util.ArrayList;
 
-public class Parser {
+public class Lexer {
     private PushbackReader reader;
     public ArrayList<Token> table;
+    private ArrayList<String> errors;
+    int line;
 
-    public Parser(String filename) throws FileNotFoundException {
+    public Lexer(String filename) throws FileNotFoundException {
         this.reader = new PushbackReader(new FileReader(filename), 10);
         this.table = new ArrayList<>();
+        this.errors = new ArrayList<>();
+        line = 0;
     }
 
     private String readIdentifier() throws IOException {
@@ -69,7 +73,7 @@ public class Parser {
         }
     }
 
-    private String readColon() throws IOException, ParseException {
+    private String readColon() throws IOException, LexException {
         int c = reader.read();
         int next = reader.read();
         if (next == '=') {
@@ -79,7 +83,7 @@ public class Parser {
         return ":";
     }
 
-    private Symbol HandleSingleChar() throws ParseException, IOException {
+    private Symbol HandleSingleChar() throws IOException {
         int c = reader.read();
         Symbol symbol = Symbol.None;
         switch (c) {
@@ -114,17 +118,20 @@ public class Parser {
                 symbol = Symbol.Comma;
                 break;
             default:
-                throw new ParseException(String.format("%c is not a valid symbol", c));
+                errors.add(String.format("In line %d, %c is not a valid symbol", line, c));
         }
         return symbol;
     }
 
-    public void parse() throws IOException, ParseException {
+    public void lex() throws IOException, LexException {
         int c;
         String word;
-        Symbol symbol;
+        Symbol symbol = Symbol.None;
         while ((c = reader.read()) != -1) {
             while (Character.isWhitespace(c)) {
+                if (c == '\n') {
+                    line++;
+                }
                 c = reader.read();
             }
             reader.unread(c);
@@ -148,7 +155,7 @@ public class Parser {
                 if (word.length() == 2) {
                     symbol = Symbol.Assign;
                 } else {
-                    throw new ParseException(": is not a valid symbol");
+                    errors.add(String.format("In line %d, %c is not a valid symbol", line, c)) ;
                 }
             } else if (c == '<') {
                 word = readLess();
@@ -171,6 +178,10 @@ public class Parser {
                 symbol = HandleSingleChar();
             }
             table.add(new Token(word, symbol));
+        }
+        // 词法分析结束时才将错误抛出
+        if (errors.size() != 0) {
+            throw new LexException(String.join("\n", errors));
         }
         reader.close();
     }

@@ -1,23 +1,20 @@
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class ParserTest {
+class LexerTest {
     @Test
     void parse() {
         try {
-            Parser parser = new Parser("pl0_test");
+            Lexer lexer = new Lexer("pl0_test");
             System.out.print("Parse start\n");
-            parser.parse();
+            lexer.lex();
             System.out.print("Parse complete\n");
-            for (Token t: parser.table
+            for (Token t: lexer.table
                  ) {
                 System.out.print(t.token + "\t" + t.symbol + "\n");
             }
-        } catch (IOException | ParseException e) {
+        } catch (IOException | LexException e) {
             System.out.print(e);
         }
     }

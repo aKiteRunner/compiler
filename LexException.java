@@ -1,4 +1,4 @@
-public class LexException extends Exception {
+class LexException extends Exception {
     public LexException(String message) {
         super(message);
     }

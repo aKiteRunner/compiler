@@ -5,7 +5,7 @@ public class Lexer {
     private PushbackReader reader;
     public ArrayList<Token> table;
     private ArrayList<String> errors;
-    int line;
+    private int line;
 
     public Lexer(String filename) throws FileNotFoundException {
         this.reader = new PushbackReader(new FileReader(filename), 10);
@@ -73,7 +73,7 @@ public class Lexer {
         }
     }
 
-    private String readColon() throws IOException, LexException {
+    private String readColon() throws IOException{
         int c = reader.read();
         int next = reader.read();
         if (next == '=') {
@@ -103,7 +103,7 @@ public class Lexer {
                 symbol = Symbol.Star;
                 break;
             case '/':
-                symbol = Symbol.Divide;
+                symbol = Symbol.Slash;
                 break;
             case '=':
                 symbol = Symbol.Equal;
@@ -134,6 +134,8 @@ public class Lexer {
                 }
                 c = reader.read();
             }
+            // 当读到末尾时，跳出循环
+            if (c == -1) break;
             reader.unread(c);
             if (Character.isLetter(c)) {
                 word = readIdentifier();

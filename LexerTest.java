@@ -12,7 +12,7 @@ class LexerTest {
             System.out.print("Parse complete\n");
             for (Token t: lexer.table
                  ) {
-                System.out.print(t.token + "\t" + t.symbol + "\n");
+                System.out.print(t.name + "\t" + t.symbol + "\n");
             }
         } catch (IOException | LexException e) {
             System.out.print(e);

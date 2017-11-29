@@ -24,21 +24,30 @@ public class Token {
         return MAP.getOrDefault(keyword, Symbol.None);
     }
 
-    public Token() {
-
-    }
-
-    public Token(String token, Symbol symbol) {
-        this.token = token;
-        this.symbol = symbol;
+    public static Type getSymbolType(Symbol symbol) {
+        switch (symbol) {
+            case Var:
+                return Type.Variable;
+            case Const:
+                return Type.Constant;
+            case Procedure:
+                return Type.Procedure;
+            default :
+                return Type.None;
+        }
     }
 
     public Symbol symbol;
-    public String token;
+    public String name;
+
+    public Token(String name, Symbol symbol) {
+        this.name = name;
+        this.symbol = symbol;
+    }
 }
 
 enum Symbol {
-    None, Identifier, Integer, Float, SemiColon, Comma, Plus, Minus, Star, Divide, LeftParentheses, RightParentheses,
+    None, Identifier, Integer, Float, SemiColon, Comma, Plus, Minus, Star, Slash, LeftParentheses, RightParentheses,
     Assign, Less, Equal, LessEqual, Greater, GreaterEqual, Unequal, Period, Odd, Begin, End, If, Then, Else,
     While, Do, Call, Const, Var, Procedure, Write, Read, Repeat, Until
 }

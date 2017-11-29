@@ -3,7 +3,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.text.ParseException;
 
 public class SimpleFrame extends JFrame {
     //打开的文件的名字
@@ -69,10 +68,10 @@ public class SimpleFrame extends JFrame {
                 if (fileName != null) {
                     Lexer lexer = new Lexer(fileName);
                     lexer.lex();
-                    jTextArear.append(String.format("%-24s%-24s%-24s\n", "单词", "类别", "值"));
+                    jTextArear.setText(String.format("%-24s%-24s%-24s\n", "单词", "类别", "值"));
                     for (int i = 0; i < lexer.table.size(); ++i) {
                         Token token = lexer.table.get(i);
-                        jTextArear.append(String.format("%-24s%-24s%-24s\n", token.token, token.symbol, token.token));
+                        jTextArear.append(String.format("%-24s%-24s%-24s\n", token.name, token.symbol, token.name));
                     }
                 }
             } catch (FileNotFoundException e1) {
@@ -103,7 +102,6 @@ public class SimpleFrame extends JFrame {
                     FileReader fileReader = null;
                     BufferedReader bufferedReader = null;
                     String line;
-                    System.out.println(jFileChooser.getSelectedFile());
                     fileName = jFileChooser.getSelectedFile().toString();
                     File infile = new File(fileName);
                     try {
@@ -126,14 +124,9 @@ public class SimpleFrame extends JFrame {
 
             }
         });
-        eMenu.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    //退出并释放资源
-                    SimpleFrame.this.dispose();
-                }
-            }
-        );
+        eMenu.addActionListener((e) -> {
+            SimpleFrame.this.dispose();
+        });
         fMenu.add(oMenu);
         fMenu.addSeparator();
         fMenu.addSeparator();

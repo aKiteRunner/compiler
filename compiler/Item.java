@@ -1,3 +1,5 @@
+package compiler;
+
 public class Item {
     public String name;
     public Type type;

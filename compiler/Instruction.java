@@ -1,3 +1,5 @@
+package compiler;
+
 public class Instruction {
     public int level, argument;
     public Code code;

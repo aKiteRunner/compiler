@@ -2,46 +2,140 @@ package op_parser;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class OperatorPrecedenceParserTest {
     @Test
-    void showGrammar() {
+    void firstVT() {
         OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
         try {
-            parser.parse("S->#E#");
-            parser.parse("E->E+T");
-            parser.parse("E->T");
-            parser.parse("T->T*F");
-            parser.parse("T->F");
-            parser.parse("F-><E>");
-            parser.parse("F->i");
+            String[] strings = new String[] {
+                    "S->#E#",
+                    "E->E+T",
+                    "E->T",
+                    "T->T*F",
+                    "T->F",
+                    "F-><E>",
+                    "F->i",
+            };
+            parser.parse(Arrays.asList(strings));
             List<String> grammars = parser.showGrammar();
-            List<String> strings = new ArrayList<>();
-            strings.add("S->#E#");
-            strings.add("T->T*F|F");
-            strings.add("E->E+T|T");
-            strings.add("F-><E>|i");
-            assertLinesMatch(strings, grammars);
+            String[] correct = new String[] {
+                    "S->#E#",
+                    "T->T*F|F",
+                    "E->E+T|T",
+                    "F-><E>|i"
+            };
+
+            TerminalTerm[] expect = new TerminalTerm[]{
+                    new TerminalTerm('#')
+            };
+            assertArrayEquals(expect, parser.firstVT(new NotTerminalTerm('S')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('*'),
+                    new TerminalTerm('+'),
+                    new TerminalTerm('<')
+            };
+            assertArrayEquals(expect, parser.firstVT(new NotTerminalTerm('E')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('*'),
+                    new TerminalTerm('<')
+            };
+            assertArrayEquals(expect, parser.firstVT(new NotTerminalTerm('T')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('<')
+            };
+            assertArrayEquals(expect, parser.firstVT(new NotTerminalTerm('F')).toArray());
         } catch (ParseError error) {
             System.out.print("OperatorPrecedenceParser.parse error");
         }
     }
 
     @Test
-    void parse() {
+    void lastVT() {
         OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
         try {
-            Grammar grammar = parser.parse("  E->(E+T)  ");
-            String correct = "E [(, E, +, T, )]";
-            String ret = grammar.in.toString() + " " + grammar.out.toString();
-            assertEquals(ret, correct);
+            String[] strings = new String[] {
+                    "S->#E#",
+                    "E->E+T",
+                    "E->T",
+                    "T->T*F",
+                    "T->F",
+                    "F-><E>",
+                    "F->i",
+            };
+            parser.parse(Arrays.asList(strings));
+            List<String> grammars = parser.showGrammar();
+            String[] correct = new String[] {
+                    "S->#E#",
+                    "T->T*F|F",
+                    "E->E+T|T",
+                    "F-><E>|i"
+            };
+
+            TerminalTerm[] expect = new TerminalTerm[]{
+                    new TerminalTerm('#')
+            };
+            assertArrayEquals(expect, parser.lastVT(new NotTerminalTerm('S')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('*'),
+                    new TerminalTerm('+'),
+                    new TerminalTerm('>')
+            };
+            assertArrayEquals(expect, parser.lastVT(new NotTerminalTerm('E')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('*'),
+                    new TerminalTerm('>')
+            };
+            assertArrayEquals(expect, parser.lastVT(new NotTerminalTerm('T')).toArray());
+
+            expect = new TerminalTerm[]{
+                    new TerminalTerm('i'),
+                    new TerminalTerm('>')
+            };
+            assertArrayEquals(expect, parser.lastVT(new NotTerminalTerm('F')).toArray());
         } catch (ParseError error) {
             System.out.print("OperatorPrecedenceParser.parse error");
         }
     }
 
+    @Test
+    void showGrammar() {
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        try {
+            String[] strings = new String[] {
+                    "S->#E#",
+                    "E->E+T",
+                    "E->T",
+                    "T->T*F",
+                    "T->F",
+                    "F-><E>",
+                    "F->i",
+            };
+            parser.parse(Arrays.asList(strings));
+            List<String> grammars = parser.showGrammar();
+            String[] correct = new String[] {
+                    "S->#E#",
+                    "T->T*F|F",
+                    "E->E+T|T",
+                    "F-><E>|i"
+            };
+            assertLinesMatch(Arrays.asList(correct), grammars);
+        } catch (ParseError error) {
+            System.out.print("OperatorPrecedenceParser.parse error");
+        }
+    }
 }

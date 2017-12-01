@@ -30,6 +30,7 @@ class TerminalTerm extends Term {
     public TerminalTerm() {
         super();
     }
+
     public TerminalTerm(char name) {
         super(name);
     }

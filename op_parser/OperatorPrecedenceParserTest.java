@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OperatorPrecedenceParserTest {
     @Test
     void parse() {
-        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
         String[] strings = new String[] {
                 "S->#E#",
                 "E->E+T",
@@ -30,7 +30,7 @@ class OperatorPrecedenceParserTest {
 
     @Test
     void table() {
-        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
         String[] strings = new String[] {
                 "S->#E#",
                 "E->E+T",
@@ -75,7 +75,7 @@ class OperatorPrecedenceParserTest {
 
     @Test
     void firstVT() {
-        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
         try {
             String[] strings = new String[] {
                     "S->#E#",
@@ -127,7 +127,7 @@ class OperatorPrecedenceParserTest {
 
     @Test
     void lastVT() {
-        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
         try {
             String[] strings = new String[] {
                     "S->#E#",
@@ -179,7 +179,7 @@ class OperatorPrecedenceParserTest {
 
     @Test
     void showGrammar() {
-        OperatorPrecedenceParser parser = new OperatorPrecedenceParser(new char[]{'#', '+', '*', '<', '>', 'i'});
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
         try {
             String[] strings = new String[] {
                     "S->#E#",

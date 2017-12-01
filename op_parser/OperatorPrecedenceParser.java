@@ -1,8 +1,5 @@
 package op_parser;
 
-
-import com.sun.org.apache.regexp.internal.RE;
-
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,44 +11,37 @@ public class OperatorPrecedenceParser {
     private HashSet<NotTerminalTerm> notTerminalTerms;
     private HashMap<NotTerminalTerm, List<Grammar>> map;
 
-    public OperatorPrecedenceParser(char[] terms) {
+    public OperatorPrecedenceParser() {
         pattern = Pattern.compile(".->(.*)");
-        init(terms);
+        init();
     }
 
-    public OperatorPrecedenceParser(Pattern pattern, char[] terms) {
+    public OperatorPrecedenceParser(Pattern pattern) {
         this.pattern = pattern;
-        init(terms);
+        init();
     }
 
-    private void init(char[] terms) {
+    private void init() {
         terminalTerms = new HashSet<>();
-        for (char t : terms) {
-            terminalTerms.add(new TerminalTerm(t));
-        }
         grammars = new ArrayList<>();
         notTerminalTerms = new HashSet<>();
         map = new HashMap<>();
     }
 
-    private Grammar parse(String string) throws ParseError {
-        string = string.trim();
+    private Grammar parse(String string) {
         Matcher m = pattern.matcher(string);
+        m.matches();
         List<Term> out = new ArrayList<>();
-        if (!m.matches()) {
-            throw new ParseError("请输入正确文法");
-        }
         NotTerminalTerm in = new NotTerminalTerm(string.charAt(0));
-        notTerminalTerms.add(in);
         string = m.group(1);
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
-            if (terminalTerms.contains(new Term(c))) {
-                out.add(new TerminalTerm(c));
+            if (notTerminalTerms.contains(new Term(c))) {
+                out.add(new NotTerminalTerm(c));
             } else {
-                NotTerminalTerm temp = new NotTerminalTerm(c);
+                TerminalTerm temp = new TerminalTerm(c);
                 out.add(temp);
-                notTerminalTerms.add(temp);
+                terminalTerms.add(temp);
             }
         }
         return new Grammar(in, out);
@@ -59,6 +49,13 @@ public class OperatorPrecedenceParser {
 
     public void parse(Collection<? extends String> strings) throws ParseError {
         Grammar grammar;
+        for (String s : strings) {
+            Matcher m = pattern.matcher(s);
+            if (!m.matches()) {
+                throw new ParseError("请输入正确文法");
+            }
+            notTerminalTerms.add(new NotTerminalTerm(s.charAt(0)));
+        }
         for (String s : strings) {
             grammar = parse(s);
             grammars.add(grammar);
@@ -221,5 +218,19 @@ public class OperatorPrecedenceParser {
 }
 
 enum Relation {
-    None, Greater, Equal, Less
+    None, Greater, Equal, Less;
+
+    @Override
+    public String toString() {
+        switch (this.name()) {
+            case "Greater":
+                return ">";
+            case "Equal":
+                return "=";
+            case "Less":
+                return "<";
+            default:
+                return "";
+        }
+    }
 }

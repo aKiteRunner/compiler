@@ -1,6 +1,8 @@
 package op_parser;
 
 
+import com.sun.org.apache.regexp.internal.RE;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -174,4 +176,50 @@ public class OperatorPrecedenceParser {
         ret.addAll(dfsLast(term, new HashSet<>()));
         return ret;
     }
+
+    public Relation[][] table() throws ParseError {
+        int size = terminalTerms.size();
+        Relation[][] relations = new Relation[size][size];
+        for (Relation[] arr : relations) {
+            Arrays.fill(arr, Relation.None);
+        }
+        Map<Term, Integer> m = tableIndex();
+        Term cur, next;
+        for (Grammar g : grammars) {
+            for (int i = 0; i < g.out.size() - 1; i++) {
+                cur = g.out.get(i);
+                next = g.out.get(i + 1);
+                if (terminalTerms.contains(cur) && terminalTerms.contains(next)) {
+                    relations[m.get(cur)][m.get(next)] = Relation.Equal;
+                } else if (terminalTerms.contains(cur) && notTerminalTerms.contains(next)) {
+                    int index = m.get(cur);
+                    for (Term t : firstVT((NotTerminalTerm) next)) {
+                        relations[index][m.get(t)] = Relation.Less;
+                    }
+                } else if (notTerminalTerms.contains(cur) && terminalTerms.contains(next)) {
+                    int index = m.get(next);
+                    for (Term t : lastVT((NotTerminalTerm) cur)) {
+                        relations[m.get(t)][index] = Relation.Greater;
+                    }
+                }
+                if (i < g.out.size() - 2 && terminalTerms.contains(cur) && terminalTerms.contains(g.out.get(i + 2))) {
+                    relations[m.get(cur)][m.get(g.out.get(i + 2))] = Relation.Equal;
+                }
+            }
+        }
+        return relations;
+    }
+
+    private Map<Term, Integer> tableIndex() {
+        Map<Term, Integer> ret = new HashMap<>();
+        int index = 0;
+        for (TerminalTerm t : terminalTerms) {
+            ret.put(t, index++);
+        }
+        return ret;
+    }
+}
+
+enum Relation {
+    None, Greater, Equal, Less
 }

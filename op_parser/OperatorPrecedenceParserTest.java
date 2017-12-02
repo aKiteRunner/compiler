@@ -203,4 +203,33 @@ class OperatorPrecedenceParserTest {
             fail("Parse error");
         }
     }
+
+    @Test
+    void makeReduction() {
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
+        try {
+            String[] strings = new String[]{
+                    "S->#E#",
+                    "E->E+T",
+                    "E->T",
+                    "T->T*F",
+                    "T->F",
+                    "F-><E>",
+                    "F->i",
+            };
+            parser.parse(Arrays.asList(strings));
+            String[] expect = new String[]{
+                    "1             |#              <              i              +i#            移进",
+                    "2             |#i             >              +              i#             规约",
+                    "3             |#F             <              +              i#             移进",
+                    "4             |#F+            <              i              #              移进",
+                    "5             |#F+i           >              #                             规约",
+                    "6             |#F+F           >              #                             规约",
+                    "7             |#E             =              #                             移进"
+            };
+            assertArrayEquals(expect, parser.makeReduction("i+i").toArray());
+        } catch (ParseError error) {
+            fail(error);
+        }
+    }
 }

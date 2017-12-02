@@ -3,6 +3,7 @@ package op_parser;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class OperatorPrecedenceParser {
     private Pattern pattern;
@@ -214,6 +215,86 @@ public class OperatorPrecedenceParser {
             ret.put(t, index++);
         }
         return ret;
+    }
+
+    private Term reduce(List<Term> src) {
+        int size = src.size();
+        for (Grammar g : grammars) {
+            if (compare(g.out, src)) return g.in;
+        }
+        return null;
+    }
+
+    private boolean compare(List<Term> list1, List<Term> list2) {
+        if (list1.size() != list2.size()) return false;
+        for (int i = 0; i < list1.size(); i++) {
+            if (notTerminalTerms.contains(list1.get(i)) && notTerminalTerms.contains(list2.get(i))) {
+                continue;
+            }
+            if (!list1.get(i).equals(list2.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public List<String> makeReduction(String action) throws ParseError{
+        return makeReduction(action, table(), tableIndex());
+    }
+
+    public List<String> makeReduction(String action, Relation[][] table, Map<Term, Integer> indexMap) throws ParseError {
+        ArrayList<Term> stack = new ArrayList<>();
+        stack.add(new Term('#'));
+        action += '#';
+        int step = 1;
+        List<Term> src = new ArrayList<>();
+        List<String> ret = new ArrayList<>();
+        for (int i = 0; i < action.length(); i++) {
+            Term top = stack.get(stack.size() - 1);
+            for (int j = stack.size() - 1; j >= 0; j--) {
+                if (terminalTerms.contains(stack.get(j))) {
+                    top = stack.get(j);
+                    break;
+                }
+            }
+            Relation relation = table[indexMap.get(top)][indexMap.get(new Term(action.charAt(i)))];
+            switch (relation) {
+                case Less:
+                case Equal:
+                    ret.add(String.format("%-14s|%-15s%-15s%-15s%-15s%s", step, printStack(stack), relation, action.charAt(i), action.substring(i + 1), "移进"));
+                    stack.add(new Term(action.charAt(i)));
+                    break;
+                case Greater:
+                    ret.add(String.format("%-14s|%-15s%-15s%-15s%-15s%s", step, printStack(stack), relation, action.charAt(i), action.substring(i + 1), "规约"));
+                    int x = stack.size() - 2;
+                    while (true) {
+                        if (stack.size() == 0) {
+                            break;
+                        }
+                        if (terminalTerms.contains(stack.get(x)) && table[indexMap.get(stack.get(x))][indexMap.get(top)] == Relation.Less) {
+                            break;
+                        }
+                        x--;
+                    }
+                    src.clear();
+                    for (int j = stack.size() - 1; j > x; j--) {
+                        src.add(stack.get(j));
+                        stack.remove(j);
+                    }
+                    Term left = reduce(src);
+                    stack.add(left);
+                    i--;
+                    break;
+                default:
+                    throw new ParseError("规约失败");
+            }
+            step++;
+        }
+        return ret;
+    }
+
+    private String printStack(List<Term> stack) {
+        return stack.stream().map(Term::toString).collect(Collectors.joining());
     }
 }
 

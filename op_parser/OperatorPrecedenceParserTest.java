@@ -4,6 +4,7 @@ import com.sun.org.apache.regexp.internal.RE;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,8 +24,10 @@ class OperatorPrecedenceParserTest {
         };
         try {
             parser.parse(Arrays.asList(strings));
-        } catch (ParseError e) {
-            fail("Parse error");
+
+            assertThrows(ParseError.class, () -> parser.parse(Collections.singletonList("E=asd")));
+        } catch (ParseError error) {
+            fail(error);
         }
     }
 
@@ -68,8 +71,8 @@ class OperatorPrecedenceParserTest {
             for (int i = 0; i < expect.length; i++) {
                 assertArrayEquals(expect[i], actual[i]);
             }
-        } catch (ParseError e) {
-            fail("Parse error");
+        } catch (ParseError error) {
+            fail(error);
         }
     }
 
@@ -120,8 +123,10 @@ class OperatorPrecedenceParserTest {
                     new TerminalTerm('<')
             };
             assertArrayEquals(expect, parser.firstVT(new NotTerminalTerm('F')).toArray());
+
+            assertThrows(ParseError.class, () -> parser.firstVT(new NotTerminalTerm('#')));
         } catch (ParseError error) {
-            fail("Parse error");
+            fail(error);
         }
     }
 
@@ -172,8 +177,10 @@ class OperatorPrecedenceParserTest {
                     new TerminalTerm('>')
             };
             assertArrayEquals(expect, parser.lastVT(new NotTerminalTerm('F')).toArray());
+
+            assertThrows(ParseError.class, () -> parser.lastVT(new NotTerminalTerm('#')));
         } catch (ParseError error) {
-            fail("Parse error");
+            fail(error);
         }
     }
 
@@ -200,7 +207,7 @@ class OperatorPrecedenceParserTest {
             };
             assertLinesMatch(Arrays.asList(correct), grammars);
         } catch (ParseError error) {
-            fail("Parse error");
+            fail(error);
         }
     }
 
@@ -228,6 +235,21 @@ class OperatorPrecedenceParserTest {
                     "7             |#E             =              #                             移进"
             };
             assertArrayEquals(expect, parser.makeReduction("i+i").toArray());
+        } catch (ParseError error) {
+            fail(error);
+        }
+        try {
+            String[] strings = new String[]{
+                    "S->#E#",
+                    "E->E+T",
+                    "E->T",
+                    "T->T*F",
+                    "T->F",
+                    "F-><E>",
+                    "F->i",
+            };
+            parser.parse(Arrays.asList(strings));
+            assertThrows(ParseError.class, () -> parser.makeReduction("ii+"));
         } catch (ParseError error) {
             fail(error);
         }

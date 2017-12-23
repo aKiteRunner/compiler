@@ -1,5 +1,7 @@
 package op_parser;
 
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -188,19 +190,31 @@ public class OperatorPrecedenceParser {
                 cur = g.out.get(i);
                 next = g.out.get(i + 1);
                 if (terminalTerms.contains(cur) && terminalTerms.contains(next)) {
+                    if(relations[m.get(cur)][m.get(next)] != Relation.None) {
+                        throw new ParseError("文法有二义性");
+                    }
                     relations[m.get(cur)][m.get(next)] = Relation.Equal;
                 } else if (terminalTerms.contains(cur) && notTerminalTerms.contains(next)) {
                     int index = m.get(cur);
                     for (Term t : firstVT((NotTerminalTerm) next)) {
+                        if (relations[index][m.get(t)] != Relation.None) {
+                            throw new ParseError("文法有二义性");
+                        }
                         relations[index][m.get(t)] = Relation.Less;
                     }
                 } else if (notTerminalTerms.contains(cur) && terminalTerms.contains(next)) {
                     int index = m.get(next);
                     for (Term t : lastVT((NotTerminalTerm) cur)) {
+                        if (relations[m.get(t)][index] != Relation.None) {
+                            throw new ParseError("文法有二义性");
+                        }
                         relations[m.get(t)][index] = Relation.Greater;
                     }
                 }
                 if (i < g.out.size() - 2 && terminalTerms.contains(cur) && terminalTerms.contains(g.out.get(i + 2))) {
+                    if (relations[m.get(cur)][m.get(g.out.get(i + 2))] != Relation.None) {
+                        throw new ParseError("文法有二义性");
+                    }
                     relations[m.get(cur)][m.get(g.out.get(i + 2))] = Relation.Equal;
                 }
             }
@@ -219,8 +233,13 @@ public class OperatorPrecedenceParser {
 
     private Term reduce(List<Term> src) {
         int size = src.size();
+        List<Term> src2 = new ArrayList<>(src.size());
+        for (int i = src.size() - 1; i >= 0; i--) {
+            src2.add(src.get(i));
+        }
         for (Grammar g : grammars) {
             if (compare(g.out, src)) return g.in;
+            if (compare(g.out, src2)) return g.in;
         }
         return null;
     }
@@ -263,12 +282,16 @@ public class OperatorPrecedenceParser {
                 case Equal:
                     ret.add(String.format("%-14s|%-15s%-15s%-15s%-15s%s", step, printStack(stack), relation, action.charAt(i), action.substring(i + 1), "移进"));
                     stack.add(new Term(action.charAt(i)));
+                    if (relation == Relation.Equal) {
+                        stack.remove(top);
+                        stack.remove(stack.size() - 1);
+                    }
                     break;
                 case Greater:
                     ret.add(String.format("%-14s|%-15s%-15s%-15s%-15s%s", step, printStack(stack), relation, action.charAt(i), action.substring(i + 1), "规约"));
                     int x = stack.size() - 2;
                     while (true) {
-                        if (stack.size() == 0) {
+                        if (x == 0) {
                             break;
                         }
                         if (terminalTerms.contains(stack.get(x)) && table[indexMap.get(stack.get(x))][indexMap.get(top)] == Relation.Less) {
@@ -286,15 +309,58 @@ public class OperatorPrecedenceParser {
                     i--;
                     break;
                 default:
-                    throw new ParseError("规约失败");
+                    ret.add("规约失败");
+                    System.out.println(String.join("\n", ret));
+                    return ret;
             }
             step++;
         }
+        System.out.println(String.join("\n", ret));
         return ret;
     }
 
     private String printStack(List<Term> stack) {
         return stack.stream().map(Term::toString).collect(Collectors.joining());
+    }
+
+    public static void main(String[] args) {
+        OperatorPrecedenceParser parser = new OperatorPrecedenceParser();
+        try {
+            Scanner scanner = new Scanner(System.in);
+            int n = scanner.nextInt();
+            ArrayList<String> strings = new ArrayList<>();
+            scanner.nextLine();
+            for (int i = 0; i < n; i++) {
+                strings.add(scanner.nextLine());
+            }
+            System.out.println(strings);
+            parser.parse(strings);
+            System.out.println(parser.showGrammar());
+            System.out.println();
+            System.out.println(parser.terminalTerms);
+            System.out.println();
+            System.out.println(parser.notTerminalTerms);
+            System.out.println();
+            for (NotTerminalTerm t : parser.notTerminalTerms) {
+                System.out.println(parser.firstVT(t));
+            }
+            System.out.println();
+            for (NotTerminalTerm t : parser.notTerminalTerms) {
+                System.out.println(parser.lastVT(t));
+            }
+            System.out.println();
+            System.out.println(Arrays.deepToString(parser.table()));
+            System.out.println();
+            while (true) {
+                try {
+                    parser.makeReduction(scanner.nextLine());
+                } catch (ParseError error) {
+                    System.out.println(error);
+                }
+            }
+        } catch (ParseError error) {
+            System.out.println(error);
+        }
     }
 }
 

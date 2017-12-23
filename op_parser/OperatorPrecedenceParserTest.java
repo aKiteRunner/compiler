@@ -221,7 +221,7 @@ class OperatorPrecedenceParserTest {
                     "E->T",
                     "T->T*F",
                     "T->F",
-                    "F-><E>",
+                    "F->(E)",
                     "F->i",
             };
             parser.parse(Arrays.asList(strings));

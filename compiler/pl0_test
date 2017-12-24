@@ -1,4 +1,21 @@
 const max = 100;
 var arg, ret, i;
-read(arg, ret, i)
+procedure ppp;
+    const max2 = 13;
+    var arg2, ret2, i2;
+    procedure ppp2;
+    begin
+        write(max2);
+    end;
+begin
+    write(arg2, ret2, i2);
+    read(arg2, i2, ret2);
+    write(max);
+end;
+begin
+    write(arg, ret, i);
+    read(arg, i, ret);
+    while do
+        write(arg)
+end
 .

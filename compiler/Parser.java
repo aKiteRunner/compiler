@@ -327,6 +327,53 @@ public class Parser {
     }
 
     private void writeStatement(int level, BitSet follow) {
+        nextToken();
+        if (token.symbol == Symbol.LeftParentheses) {
+            int index = 0;
+            do {
+                nextToken();
+                if (token.symbol == Symbol.Identifier) {
+                    index = table.index(token.name);
+                }
+                // 未声明的标识符
+                if (index == 0) {
+                    errors.addErrors(12, token.line);
+                } else {
+                    Item item = table.get(index);
+                    if (item.type != Type.Procedure) {
+                        try {
+                            interpreter.generate(Code.OPR, 0, 14);
+                        } catch (ParseException error) {
+                            errors.addErrors(error.getMessage(), token.line);
+                        }
+                    } else {
+                        // 输出过程的值
+                        errors.addErrors(35, token.line);
+                    }
+                }
+                nextToken();
+            } while (token.symbol == Symbol.Comma);
+        } else {
+            errors.addErrors(31, token.line);
+        }
+        getRightParenthesis(follow);
+        // 输出换行符
+        try {
+            interpreter.generate(Code.OPR, 0, 15);
+        } catch (ParseException error) {
+            errors.addErrors(error.getMessage(), token.line);
+        }
+    }
+
+    private void getRightParenthesis(BitSet follow) {
+        if (token.symbol == Symbol.RightParentheses) {
+            nextToken();
+        } else {
+                errors.addErrors(30, token.line);
+            while (!follow.get(token.symbol.ordinal()) && hasNextToken()) {
+                nextToken();
+            }
+        }
     }
 
     private void readStatement(int level, BitSet follow) {
@@ -360,15 +407,7 @@ public class Parser {
         } else {
             errors.addErrors(31, token.line);
         }
-
-        if (token.symbol == Symbol.RightParentheses) {
-            nextToken();
-        } else {
-            errors.addErrors(30, token.line);
-            while (!follow.get(token.symbol.ordinal()) && hasNextToken()) {
-                nextToken();
-            }
-        }
+        getRightParenthesis(follow);
     }
 
     private void callStatement(int level, BitSet follow) {
@@ -376,15 +415,60 @@ public class Parser {
     }
 
     private void ifStatement(int level, BitSet follow) {
-
     }
 
     private void beginStatement(int level, BitSet follow) {
-
+        nextToken();
+        BitSet nextLevel = (BitSet) follow.clone();
+        nextLevel.set(Symbol.SemiColon.ordinal());
+        nextLevel.set(Symbol.End.ordinal());
+        // 递归statement
+        statement(level, nextLevel);
+        while (statementFirst.get(token.symbol.ordinal()) || token.symbol == Symbol.SemiColon) {
+            // 判断是否缺少分号
+            if (token.symbol == Symbol.SemiColon) {
+                nextToken();
+            } else {
+                errors.addErrors(11, token.line);
+            }
+            statement(level, nextLevel);
+        }
+        if (token.symbol == Symbol.End) {
+            nextToken();
+        } else {
+            errors.addErrors(18, token.line);
+        }
     }
 
     private void whileStatement(int level, BitSet follow) {
-
+        // 循环开始
+        int interpreterPtr1 = interpreter.arrayPtr;
+        nextToken();
+        BitSet nextLevel = (BitSet) follow.clone();
+        nextLevel.set(Symbol.Do.ordinal());
+        condition(level, nextLevel);
+        // 循环结束
+        int interpreterPtr2 = interpreter.arrayPtr;
+        try {
+            interpreter.generate(Code.JPC, 0, 0);
+        } catch (ParseException error) {
+            errors.addErrors(error.getMessage(), token.line);
+        }
+        // Condition后面接Do
+        if (token.symbol == Symbol.Do) {
+            nextToken();
+        } else {
+            errors.addErrors(19, token.line);
+        }
+        statement(level, follow);
+        // 跳回条件判断的位置
+        try {
+            interpreter.generate(Code.JMP, 0, interpreterPtr1);
+        } catch (ParseException error) {
+            errors.addErrors(error.getMessage(), token.line);
+        }
+        // 回填跳出循环的地址
+        interpreter.instructions[interpreterPtr2].argument = interpreter.arrayPtr;
     }
 
     private void repeatStatement(int level, BitSet follow) {
@@ -392,7 +476,85 @@ public class Parser {
     }
 
     private void expression(int level, BitSet follow) {
+        // expression = [ '+'|'-'] term { ('+'|'-') term}
+        if (token.symbol == Symbol.Plus || token.symbol == Symbol.Minus) {
+            Symbol operator = token.symbol;
+            nextToken();
+            BitSet nextLevel = (BitSet) follow.clone();
+            nextLevel.set(Symbol.Plus.ordinal());
+            nextLevel.set(Symbol.Minus.ordinal());
+            term(level, nextLevel);
+            // Neg 取反
+            if (operator == Symbol.Minus) {
+                try {
+                    interpreter.generate(Code.OPR, 0, 1);
+                } catch (ParseException error) {
+                    errors.addErrors(error.getMessage(), token.line);
+                }
+            }
+        } else {
+            BitSet nextLevel = (BitSet) follow.clone();
+            nextLevel.set(Symbol.Plus.ordinal());
+            nextLevel.set(Symbol.Minus.ordinal());
+            term(level, nextLevel);
+        }
+        // { ('+'|'-') term}
+        while (token.symbol == Symbol.Plus || token.symbol == Symbol.Minus) {
+            Symbol operator = token.symbol;
+            nextToken();
+            BitSet nextLevel = (BitSet) follow.clone();
+            nextLevel.set(Symbol.Plus.ordinal());
+            nextLevel.set(Symbol.Minus.ordinal());
+            term(level, nextLevel);
+            try {
+                // 2, 3分别为加减法
+                if (operator == Symbol.Plus) {
+                    interpreter.generate(Code.OPR, 0, 2);
+                } else {
+                    interpreter.generate(Code.OPR, 0, 3);
+                }
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), token.line);
+            }
+        }
+    }
 
+    private void term(int level, BitSet follow) {
+        // term = factor {('*'|'/') factor}
+        BitSet nextLevel = (BitSet) follow.clone();
+        nextLevel.set(Symbol.Star.ordinal());
+        nextLevel.set(Symbol.Slash.ordinal());
+        factor(level, nextLevel);
+        while (token.symbol == Symbol.Star || token.symbol == Symbol.Slash) {
+            Symbol operator = token.symbol;
+            nextToken();
+            factor(level, nextLevel);
+            try {
+                if (operator == Symbol.Star) {
+                    interpreter.generate(Code.OPR, 0, 4);
+                } else {
+                    interpreter.generate(Code.OPR, 0, 5);
+                }
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), level);
+            }
+        }
+    }
+
+    private void factor(int level, BitSet follow) {
+        // factor = ident | number | '(' expression ')'
+    }
+
+    private void condition(int level, BitSet follow) {
+        if (token.symbol == Symbol.Odd) {
+            nextToken();
+            expression(level, follow);
+            try {
+                interpreter.generate(Code.OPR, 0, 6);
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), token.line);
+            }
+        }
     }
 
     public static void main(String[] args) {

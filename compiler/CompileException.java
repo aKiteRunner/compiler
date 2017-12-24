@@ -24,7 +24,7 @@ public class CompileException extends Exception {
             "不可调用常量或变量", // 16
             "应为then", // 17
             "应为分号或end", // 18
-            "应为do", //19
+            "缺少do", //19
             "语句后的符号不正确", //20
             "应为关系运算符", // 21
             "表达式内不可有过程标识符", // 22
@@ -39,7 +39,8 @@ public class CompileException extends Exception {
             "缺少左括号", //31
             "read()中的变量未声明", //32
             "缺少语句", //33
-            "向常量或者过程赋值" //34
+            "向常量或者过程赋值", //34
+            "无法输出过程的值" //35
     };
     private ArrayList<String> errors = new ArrayList<>();
 

@@ -24,9 +24,9 @@ public class Interpreter {
         arrayPtr++;
     }
 
-    public void printInstructions() {
-        for (Instruction instruction : instructions) {
-            System.out.println(instruction);
+    public void printInstructions(int start) {
+        for (int i = start; i < arrayPtr; i++) {
+            System.out.println(instructions.get(i));
         }
     }
 }

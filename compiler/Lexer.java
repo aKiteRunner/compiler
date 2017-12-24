@@ -123,7 +123,7 @@ public class Lexer {
                 symbol = Symbol.Comma;
                 break;
             default:
-                errors.add(String.format("In line %d, %c is not a valid symbol.", line, c));
+                errors.add(String.format("Line %d: %c不是合法的字符.", line, c));
         }
         return symbol;
     }
@@ -162,7 +162,7 @@ public class Lexer {
                 if (word.length() == 2) {
                     symbol = Symbol.Assign;
                 } else {
-                    errors.add(String.format("In line %d, %c is not a valid symbol", line, c)) ;
+                    errors.add(String.format("Line %d: %c不是合法的字符.", line, c)) ;
                 }
             } else if (c == '<') {
                 word = readLess();

@@ -8,29 +8,28 @@ public class SymbolTable {
     public static final int ADDRESS_MAX = 1000000;
     public static final int LEVEL_MAX = 3;
     public static final int INT_MAX = Integer.MAX_VALUE;
+    public int tablePtr;
+    private ArrayList<Item> table;
 
-    private LinkedHashMap<String, Item> table;
 
     public SymbolTable() {
-        table = new LinkedHashMap<>();
+        table = new ArrayList<>(TABLE_MAX);
+        tablePtr = 0;
     }
 
-    public Item get(String name) {
-        ListIterator<Map.Entry<String, Item>> i = new ArrayList<>(table.entrySet()).listIterator(table.size());
-        while (i.hasPrevious()) {
-            Map.Entry<String, Item> entry = i.previous();
-            if (entry.getKey().equals(name)) {
-                return entry.getValue();
-            }
+    public Item get(int index) {
+        if (table.get(index) == null) {
+            table.set(index, new Item());
         }
-        return null;
+        return table.get(index);
     }
 
     private void add(Item item) throws ParseException {
         if (table.size() == TABLE_MAX) {
             throw new ParseException("Table too large");
         }
-        table.put(item.name, item);
+        tablePtr++;
+        table.set(tablePtr, item);
     }
 
     public void addConstant(Token token, int value) throws ParseException{
@@ -53,13 +52,12 @@ public class SymbolTable {
         Item item = new Item();
         item.name = token.name;
         item.level = level;
-        table.put(item.name, item);
         add(item);
     }
 
     public void printTable() {
-        for (Map.Entry<String, Item> entry : table.entrySet()) {
-            System.out.println(entry.getValue());
+        for (int i = 0; i < tablePtr; i++) {
+            System.out.println(table.get(i));
         }
     }
 }

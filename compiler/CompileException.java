@@ -17,7 +17,7 @@ public class CompileException extends Exception {
             "缺少句号",// 9
             "应为句号", // 10
             "语句之间漏分号", // 11
-            "标识符未说明", // 12
+            "未声明的标识符", // 12
             "不可向常量或过程名赋值", // 13
             "应为赋值运算符:=",  // 14
             "call后应为标识符", // 15
@@ -35,9 +35,11 @@ public class CompileException extends Exception {
             "不是合法的字符", //27
             "数越界", // 28
             "过程嵌套层数过大", // 29
-            "格式错误，应为右括号", //30
-            "格式错误，应为左括号", //31
-            "read()中的变量未声明" //32
+            "缺少右括号", //30
+            "缺少左括号", //31
+            "read()中的变量未声明", //32
+            "缺少语句", //33
+            "向常量或者过程赋值" //34
     };
     private ArrayList<String> errors = new ArrayList<>();
 

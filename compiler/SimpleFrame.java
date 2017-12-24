@@ -71,8 +71,8 @@ public class SimpleFrame extends JFrame {
                     Lexer lexer = new Lexer(fileName);
                     lexer.lex();
                     jTextArear.setText(String.format("%-24s%-24s%-24s\n", "单词", "类别", "值"));
-                    for (int i = 0; i < lexer.table.size(); ++i) {
-                        Token token = lexer.table.get(i);
+                    for (int i = 0; i < lexer.getTable().size(); ++i) {
+                        Token token = lexer.getTable().get(i);
                         jTextArear.append(String.format("%-24s%-24s%-24s\n", token.name, token.symbol, token.name));
                     }
                 }

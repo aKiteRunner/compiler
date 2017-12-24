@@ -2,6 +2,7 @@ package compiler;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.BitSet;
 
 public class Parser {
@@ -56,11 +57,16 @@ public class Parser {
     }
 
     public void nextToken() {
+        System.out.println(token);
         if (lexer.hasNextToken()) {
             token = lexer.nextToken();
         } else {
             token = null;
         }
+    }
+
+    public boolean hasNextToken() {
+        return lexer.hasNextToken();
     }
 
     public void parse() {
@@ -170,7 +176,7 @@ public class Parser {
 
         Item item = table.get(tablePtr);
         // 过程入口地址, JMP的第二个参数
-        interpreter.instructions.get(item.address).argument = interpreter.arrayPtr;
+        interpreter.instructions[item.address].argument = interpreter.arrayPtr;
         item.address = interpreter.arrayPtr;
         item.size = dx;
         // dx即是当前堆栈大小
@@ -198,11 +204,38 @@ public class Parser {
         interpreter.printInstructions(interpreterPtr);
         dx = dx0;
         table.tablePtr = tablePtr;
-
     }
 
     private void statement(int level, BitSet follow) {
-
+        switch (token.symbol) {
+            case Identifier:
+                assignmentStatement(level, follow);
+                break;
+            case Read:
+                readStatement(level, follow);
+                break;
+            case Write:
+                writeStatement(level, follow);
+                break;
+            case If:
+                ifStatement(level, follow);
+                break;
+            case While:
+                whileStatement(level, follow);
+                break;
+            case Repeat:
+                repeatStatement(level, follow);
+                break;
+            case Begin:
+                beginStatement(level, follow);
+                break;
+            case Call:
+                callStatement(level, follow);
+                break;
+            default:
+                BitSet nextLevel = new BitSet();
+                test(follow, nextLevel, 20);
+        }
     }
 
     private void constDeclare(int level) {
@@ -259,9 +292,121 @@ public class Parser {
         if (!s1.get(token.symbol.ordinal())) {
             errors.addErrors(errorCode, token.line);
             s1.or(s2);
-            while (!s1.get(token.symbol.ordinal())) {
+            while (!s1.get(token.symbol.ordinal()) && hasNextToken()) {
                 nextToken();
             }
+        }
+    }
+
+    private void assignmentStatement(int level, BitSet follow) {
+        // ident ':=' expression
+        int index = table.index(token.name);
+        if (index > 0) {
+            Item item = table.get(index);
+            if (item.type == Type.Variable) {
+                nextToken();
+                if (token.symbol == Symbol.Assign) {
+                    nextToken();
+                } else {
+                    errors.addErrors(14, token.line);
+                }
+                BitSet nextLevel = (BitSet) follow.clone();
+                // 解析表达式
+                expression(level, nextLevel);
+                try {
+                    interpreter.generate(Code.STO, level - item.level, item.address);
+                } catch (ParseException error) {
+                    errors.addErrors(error.getMessage(), token.line);
+                }
+            } else {
+                errors.addErrors(13, token.line);
+            }
+        } else {
+            errors.addErrors(12, token.line);
+        }
+    }
+
+    private void writeStatement(int level, BitSet follow) {
+    }
+
+    private void readStatement(int level, BitSet follow) {
+        nextToken();
+        if (token.symbol == Symbol.LeftParentheses) {
+            int index = 0;
+            do {
+                nextToken();
+                if (token.symbol == Symbol.Identifier) {
+                    index = table.index(token.name);
+                }
+                // 未声明的标识符
+                if (index == 0) {
+                    errors.addErrors(12, token.line);
+                } else {
+                    Item item = table.get(index);
+                    if (item.type == Type.Variable) {
+                        try {
+                            interpreter.generate(Code.OPR, 0, 16);
+                            interpreter.generate(Code.STO, level - item.level, item.address);
+                        } catch (ParseException error) {
+                            errors.addErrors(error.getMessage(), token.line);
+                        }
+                    } else {
+                        // 给常量或者过程赋值
+                        errors.addErrors(34, token.line);
+                    }
+                }
+                nextToken();
+            } while (token.symbol == Symbol.Comma);
+        } else {
+            errors.addErrors(31, token.line);
+        }
+
+        if (token.symbol == Symbol.RightParentheses) {
+            nextToken();
+        } else {
+            errors.addErrors(30, token.line);
+            while (!follow.get(token.symbol.ordinal()) && hasNextToken()) {
+                nextToken();
+            }
+        }
+    }
+
+    private void callStatement(int level, BitSet follow) {
+
+    }
+
+    private void ifStatement(int level, BitSet follow) {
+
+    }
+
+    private void beginStatement(int level, BitSet follow) {
+
+    }
+
+    private void whileStatement(int level, BitSet follow) {
+
+    }
+
+    private void repeatStatement(int level, BitSet follow) {
+
+    }
+
+    private void expression(int level, BitSet follow) {
+
+    }
+
+    public static void main(String[] args) {
+        try {
+            Lexer lexer = new Lexer("D:\\1234\\workspace\\java\\compiler\\src\\compiler\\pl0_test");
+            lexer.lex();
+            Parser parser = new Parser(lexer, "123");
+            parser.nextToken();
+            parser.parse();
+            System.out.println(parser.errors.getErrors());
+        } catch (IOException e) {
+            System.out.println(e);
+        } catch (CompileException e) {
+            System.out.println(e.getErrors());
         }
     }
 }

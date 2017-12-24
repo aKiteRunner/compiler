@@ -16,7 +16,7 @@ public class Lexer {
         this.reader = new PushbackReader(new FileReader(filename), 10);
         this.table = new ArrayList<>();
         this.errors = new ArrayList<>();
-        line = 0;
+        line = 1;
     }
 
     private String readIdentifier() throws IOException {
@@ -201,5 +201,9 @@ public class Lexer {
 
     public boolean hasNextToken() {
         return iterator.hasNext();
+    }
+
+    public ArrayList<Token> getTable() {
+        return table;
     }
 }

@@ -46,6 +46,12 @@ public class Token {
     public Token(String name, Symbol symbol, int line) {
         this.name = name;
         this.symbol = symbol;
+        this.line = line;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("symbol: %s, name: %s, line: %d", symbol, name, line);
     }
 }
 

@@ -41,8 +41,9 @@ public class Token {
 
     public Symbol symbol;
     public String name;
+    public int line;
 
-    public Token(String name, Symbol symbol) {
+    public Token(String name, Symbol symbol, int line) {
         this.name = name;
         this.symbol = symbol;
     }

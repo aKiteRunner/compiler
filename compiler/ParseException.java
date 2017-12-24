@@ -1,6 +1,6 @@
 package compiler;
 
-public class ParseException extends Exception {
+public class ParseException extends CompileException {
     public ParseException() {
         super();
     }

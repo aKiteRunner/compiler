@@ -9,6 +9,11 @@ public class Instruction {
         this.level = level;
         this.argument = argument;
     }
+
+    @Override
+    public String toString() {
+        return String.format("code: %s, level: %d, argument: %d", code, level, argument);
+    }
 }
 
 enum Code {

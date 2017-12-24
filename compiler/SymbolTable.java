@@ -1,6 +1,6 @@
 package compiler;
 
-import java.util.HashMap;
+import java.util.*;
 
 public class SymbolTable {
     public static final int TABLE_MAX = 1000;
@@ -9,14 +9,21 @@ public class SymbolTable {
     public static final int LEVEL_MAX = 3;
     public static final int INT_MAX = Integer.MAX_VALUE;
 
-    private HashMap<String, Item> table;
+    private LinkedHashMap<String, Item> table;
 
     public SymbolTable() {
-        table = new HashMap<>();
+        table = new LinkedHashMap<>();
     }
 
     public Item get(String name) {
-        return table.get(name);
+        ListIterator<Map.Entry<String, Item>> i = new ArrayList<>(table.entrySet()).listIterator(table.size());
+        while (i.hasPrevious()) {
+            Map.Entry<String, Item> entry = i.previous();
+            if (entry.getKey().equals(name)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private void add(Item item) throws ParseException {
@@ -48,5 +55,11 @@ public class SymbolTable {
         item.level = level;
         table.put(item.name, item);
         add(item);
+    }
+
+    public void printTable() {
+        for (Map.Entry<String, Item> entry : table.entrySet()) {
+            System.out.println(entry.getValue());
+        }
     }
 }

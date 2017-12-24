@@ -2,12 +2,15 @@ package compiler;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.ListIterator;
 
 public class Lexer {
     private PushbackReader reader;
-    public ArrayList<Token> table;
+    private ArrayList<Token> table;
     private ArrayList<String> errors;
     private int line;
+    private Iterator<Token> iterator;
 
     public Lexer(String filename) throws FileNotFoundException {
         this.reader = new PushbackReader(new FileReader(filename), 10);
@@ -120,7 +123,7 @@ public class Lexer {
                 symbol = Symbol.Comma;
                 break;
             default:
-                errors.add(String.format("In line %d, %c is not a valid symbol", line, c));
+                errors.add(String.format("In line %d, %c is not a valid symbol.", line, c));
         }
         return symbol;
     }
@@ -181,12 +184,22 @@ public class Lexer {
                 word = Character.toString((char) c);
                 symbol = HandleSingleChar();
             }
-            table.add(new Token(word, symbol));
+            table.add(new Token(word, symbol, line));
         }
         // 词法分析结束时才将错误抛出
+        iterator = table.iterator();
         if (errors.size() != 0) {
-            throw new LexException(String.join("\n", errors));
+            iterator = null;
+            throw new LexException(errors);
         }
         reader.close();
+    }
+
+    public Token nextToken() {
+        return iterator.next();
+    }
+
+    public boolean hasNextToken() {
+        return iterator.hasNext();
     }
 }

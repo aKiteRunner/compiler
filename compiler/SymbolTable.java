@@ -5,7 +5,6 @@ import java.util.*;
 public class SymbolTable {
     public static final int TABLE_MAX = 1000;
     public static final int SYMBOL_MAX = 12;
-    public static final int ADDRESS_MAX = 1000000;
     public static final int LEVEL_MAX = 3;
     public static final int INT_MAX = Integer.MAX_VALUE;
     public int tablePtr;

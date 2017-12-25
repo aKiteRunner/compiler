@@ -15,7 +15,9 @@ end;
 begin
     write(arg, ret, i);
     read(arg, i, ret);
-    while do
-        write(arg)
+    i := i + i * i;
+    while i < arg do
+        i := i + (i + i) * i;
+    call ppp
 end
 .

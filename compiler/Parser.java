@@ -411,10 +411,35 @@ public class Parser {
     }
 
     private void callStatement(int level, BitSet follow) {
-
+        nextToken();
+        if (token.symbol == Symbol.Identifier) {
+            int index = table.index(token.name);
+            if (index > 0) {
+                Item item = table.get(index);
+                switch (item.type) {
+                    case Procedure:
+                        try {
+                            interpreter.generate(Code.CAL, level - item.level, item.address);
+                        } catch (ParseException error) {
+                            errors.addErrors(error.getMessage(), token.line);
+                        }
+                        break;
+                    default:
+                        errors.addErrors(16, token.line);
+                }
+            } else {
+                // 未声明的标识符
+                errors.addErrors(12, token.line);
+            }
+            nextToken();
+        } else {
+            // Call 后面应该接标识符
+            errors.addErrors(15, token.line);
+        }
     }
 
     private void ifStatement(int level, BitSet follow) {
+        
     }
 
     private void beginStatement(int level, BitSet follow) {
@@ -472,11 +497,37 @@ public class Parser {
     }
 
     private void repeatStatement(int level, BitSet follow) {
-
+        // 'repeat' statement 'until' condition
+        int interpreterPtr1 = interpreter.arrayPtr;
+        nextToken();
+        BitSet nextLevel = (BitSet) follow.clone();
+        nextLevel.set(Symbol.Until.ordinal());
+        statement(level, nextLevel);
+        // 如果是多个statement, 虽然我觉得文法有问题
+//        while (statementFirst.get(token.symbol.ordinal()) || token.symbol == Symbol.SemiColon) {
+//            if (token.symbol == Symbol.SemiColon) {
+//                nextToken();
+//            } else {
+//                // 缺少分号
+//                errors.addErrors(18, token.line);
+//            }
+//            statement(level, nextLevel);
+//        }
+        // Statement 后接 Until
+        if (token.symbol == Symbol.Until) {
+            nextToken();
+            condition(level, follow);
+            try {
+                interpreter.generate(Code.JPC, 0, interpreterPtr1);
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), token.line);
+            }
+        }
     }
 
     private void expression(int level, BitSet follow) {
         // expression = [ '+'|'-'] term { ('+'|'-') term}
+        System.out.println(token.symbol);
         if (token.symbol == Symbol.Plus || token.symbol == Symbol.Minus) {
             Symbol operator = token.symbol;
             nextToken();
@@ -543,9 +594,61 @@ public class Parser {
 
     private void factor(int level, BitSet follow) {
         // factor = ident | number | '(' expression ')'
+        // 以Identifier, Number, ( 开始
+        if (token.symbol == Symbol.Identifier) {
+            int index = table.index(token.name);
+            if (index > 0) {
+                Item item = table.get(index);
+                switch (item.type) {
+                    case Variable:
+                        try {
+                            interpreter.generate(Code.LOD, level - item.level, item.address);
+                        } catch (ParseException error) {
+                            errors.addErrors(error.getMessage(), token.line);
+                        }
+                        break;
+                    case Constant:
+                        try {
+                            interpreter.generate(Code.LIT, 0, item.value);
+                        } catch (ParseException error) {
+                            errors.addErrors(error.getMessage(), token.line);
+                        }
+                        break;
+                    case Procedure:
+                        // 表达式中不可以有过程
+                        errors.addErrors(22, token.line);
+                }
+            } else {
+                // 未声明的标识符
+                errors.addErrors(12, token.line);
+            }
+            nextToken();
+        } else if (token.symbol == Symbol.Integer) {
+            int value = Integer.parseInt(token.name);
+            try {
+                interpreter.generate(Code.LIT, 0, value);
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), token.line);
+            }
+            nextToken();
+        } else if (token.symbol == Symbol.LeftParentheses) {
+            nextToken();
+            BitSet nextLevel = (BitSet) follow.clone();
+            nextLevel.set(Symbol.RightParentheses.ordinal());
+            expression(level, nextLevel);
+            if (token.symbol == Symbol.RightParentheses) {
+                nextToken();
+            } else {
+                errors.addErrors(30, token.line);
+            }
+        } else {
+             test(follow, factorFirst, 24);
+        }
     }
 
     private void condition(int level, BitSet follow) {
+        // condition = 'odd' expression |
+        //            expression ('='|'#'|'<'|'<='|'>'|'>=') expression
         if (token.symbol == Symbol.Odd) {
             nextToken();
             expression(level, follow);
@@ -553,6 +656,35 @@ public class Parser {
                 interpreter.generate(Code.OPR, 0, 6);
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
+            }
+        } else {
+            // expression ('='|'#'|'<'|'<='|'>'|'>=') expression
+            BitSet nextLevel = (BitSet) follow.clone();
+            nextLevel.set(Symbol.Equal.ordinal());
+            nextLevel.set(Symbol.Unequal.ordinal());
+            nextLevel.set(Symbol.Greater.ordinal());
+            nextLevel.set(Symbol.GreaterEqual.ordinal());
+            nextLevel.set(Symbol.Less.ordinal());
+            nextLevel.set(Symbol.LessEqual.ordinal());
+            expression(level, nextLevel);
+            switch (token.symbol) {
+                case Equal:
+                case Unequal:
+                case Greater:
+                case GreaterEqual:
+                case Less:
+                case LessEqual:
+                    nextToken();
+                    expression(level, follow);
+                    //13 - 18 => 8 - 13
+                    try {
+                        interpreter.generate(Code.OPR, 0, token.symbol.ordinal() - 5);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
+                default:
+                    errors.addErrors(21, token.line);
             }
         }
     }

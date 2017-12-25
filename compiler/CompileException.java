@@ -23,7 +23,7 @@ public class CompileException extends Exception {
             "call后应为标识符", // 15
             "不可调用常量或变量", // 16
             "应为then", // 17
-            "应为分号或end", // 18
+            "缺少分号", // 18
             "缺少do", //19
             "语句后的符号不正确", //20
             "应为关系运算符", // 21

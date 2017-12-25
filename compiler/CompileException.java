@@ -22,7 +22,7 @@ public class CompileException extends Exception {
             "应为赋值运算符:=",  // 14
             "call后应为标识符", // 15
             "不可调用常量或变量", // 16
-            "应为then", // 17
+            "缺少then", // 17
             "缺少分号", // 18
             "缺少do", //19
             "语句后的符号不正确", //20

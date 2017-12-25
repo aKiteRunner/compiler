@@ -369,7 +369,7 @@ public class Parser {
         if (token.symbol == Symbol.RightParentheses) {
             nextToken();
         } else {
-                errors.addErrors(30, token.line);
+            errors.addErrors(30, token.line);
             while (!follow.get(token.symbol.ordinal()) && hasNextToken()) {
                 nextToken();
             }
@@ -439,7 +439,42 @@ public class Parser {
     }
 
     private void ifStatement(int level, BitSet follow) {
-        
+        // 'if' condition 'then' statement  ['else' statement]
+        nextToken();
+        BitSet nextLevel = (BitSet) follow.clone();
+        nextLevel.set(Symbol.Then.ordinal());
+        condition(level, nextLevel);
+        // Condition 后面接 Then
+        if (token.symbol == Symbol.Then) {
+            nextToken();
+        } else {
+            errors.addErrors(17, token.line);
+        }
+        int interpreterPtr1 = interpreter.arrayPtr;
+        try {
+            interpreter.generate(Code.JPC, 0, 0);
+        } catch (ParseException error) {
+            errors.addErrors(error.getMessage(), token.line);
+        }
+        nextLevel.set(Symbol.Else.ordinal());
+        statement(level, nextLevel);
+        if (token.symbol == Symbol.Else) {
+            // 如果有 Else 则需要增加一条跳转命令
+            int interpreter2 = interpreter.arrayPtr;
+            try {
+                interpreter.generate(Code.JMP, 0, 0);
+            } catch (ParseException error) {
+                errors.addErrors(error.getMessage(), token.line);
+            }
+            // 回填Condition为假时, 即进入Else的地址
+            interpreter.instructions[interpreterPtr1].argument = interpreter.arrayPtr;
+            nextToken();
+            statement(level, follow);
+            // 回填Condition为真时, 跳过Else分支的地址
+            interpreter.instructions[interpreter2].argument = interpreter.arrayPtr;
+        } else {
+            interpreter.instructions[interpreterPtr1].argument = interpreter.arrayPtr;
+        }
     }
 
     private void beginStatement(int level, BitSet follow) {
@@ -527,7 +562,6 @@ public class Parser {
 
     private void expression(int level, BitSet follow) {
         // expression = [ '+'|'-'] term { ('+'|'-') term}
-        System.out.println(token.symbol);
         if (token.symbol == Symbol.Plus || token.symbol == Symbol.Minus) {
             Symbol operator = token.symbol;
             nextToken();
@@ -642,7 +676,7 @@ public class Parser {
                 errors.addErrors(30, token.line);
             }
         } else {
-             test(follow, factorFirst, 24);
+            errors.addErrors(24, token.line);
         }
     }
 

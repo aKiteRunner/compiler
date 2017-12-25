@@ -5,19 +5,25 @@ procedure ppp;
     var arg2, ret2, i2;
     procedure ppp2;
     begin
-        write(max2);
+        if max2 < max then
+            write(max2)
+        else
+            begin
+                write(max);
+                write(max2)
+            end
     end;
 begin
     write(arg2, ret2, i2);
-    read(arg2, i2, ret2);
-    write(max);
+    read(arg2, i2, ret2)
 end;
 begin
-    write(arg, ret, i);
-    read(arg, i, ret);
-    i := i + i * i;
-    while i < arg do
-        i := i + (i + i) * i;
-    call ppp
+    while arg < ret do
+        i := i * i * i + i;
+    if arg < ret then
+        begin
+            write(arg, ret);
+            read(arg, ret)
+        end
 end
 .

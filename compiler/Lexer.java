@@ -14,6 +14,15 @@ public class Lexer {
 
     public Lexer(String filename) throws FileNotFoundException {
         this.reader = new PushbackReader(new FileReader(filename), 10);
+        init();
+    }
+
+    public Lexer(BufferedReader reader) {
+        this.reader = new PushbackReader(reader, 10);
+        init();
+    }
+
+    private void init() {
         this.table = new ArrayList<>();
         this.errors = new ArrayList<>();
         line = 1;
@@ -123,7 +132,8 @@ public class Lexer {
                 symbol = Symbol.Comma;
                 break;
             default:
-                errors.add(String.format("Line %d: %c不是合法的字符.", line, c));
+                if (c != -1 && c != 65535)
+                    errors.add(String.format("Line %d: %c不是合法的字符.", line, c));
         }
         return symbol;
     }

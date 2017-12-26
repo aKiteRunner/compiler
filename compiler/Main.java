@@ -5,7 +5,7 @@ import java.io.*;
 public class Main {
     public static void main(String[] args) {
         try {
-            Lexer lexer = new Lexer("D:\\1234\\workspace\\java\\compiler\\src\\pl0_test\\correct_test5");
+            Lexer lexer = new Lexer("D:\\1234\\workspace\\java\\compiler\\src\\pl0_test\\correct_test4");
             lexer.lex();
             Interpreter interpreter = new Interpreter();
             Parser parser = new Parser(lexer, interpreter,"Pcode");

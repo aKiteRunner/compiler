@@ -12,7 +12,7 @@ public class Instruction {
 
     @Override
     public String toString() {
-        return String.format("code: %s, level: %d, argument: %d", code, level, argument);
+        return String.format("%s %d %d", code, level, argument);
     }
 }
 

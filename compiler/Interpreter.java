@@ -3,6 +3,7 @@ package compiler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.*;
 
 public class Interpreter {
     // 运行栈上限
@@ -45,6 +46,7 @@ public class Interpreter {
         int[] runtimeStack = new int[stackSize];
         int pc = 0, bp = 0, sp = -1;
         Instruction instruction;
+        Scanner scanner = new Scanner(in);
         do {
             instruction = instructions[pc++];
             switch (instruction.code) {
@@ -111,11 +113,7 @@ public class Interpreter {
                     break;
                 case RED:
                     sp++;
-                    try {
-                        runtimeStack[sp] = Integer.parseInt(in.readLine().trim());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    runtimeStack[sp] = scanner.nextInt();
                     break;
                 case WRT:
                     try {
@@ -127,6 +125,7 @@ public class Interpreter {
                     sp--;
                     break;
                 case WRL:
+                    System.out.println("1");
                     try {
                         out.write('\n');
                         out.flush();
@@ -160,5 +159,11 @@ public class Interpreter {
                     break;
             }
         } while (instruction.code != Code.HLT);
+    }
+
+    public List<Instruction> getInstructions() {
+        List<Instruction> res = new ArrayList<>(arrayPtr);
+        res.addAll(Arrays.asList(instructions).subList(0, arrayPtr));
+        return res;
     }
 }

@@ -1,12 +1,16 @@
-const max1 = 1, max2 = 2;
+const max1 = 30, max2 = 24;
 var i;
 procedure p1;
     begin
         if max1 < max2 then
             write(max1, max2)
+        else
+            write(max2, max1);
     end;
 begin
-    i := - (i + i) * i - i / (i + (i + i));
+    i := 3;
+    i := i + 1 * 10 + 12;
     call p1;
+    write(i)
 end
 .

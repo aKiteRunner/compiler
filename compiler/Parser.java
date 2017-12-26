@@ -16,11 +16,11 @@ public class Parser {
     private BitSet blockFirst, statementFirst, factorFirst;
     private int dx;
 
-    public Parser(Lexer lexer, String filename) throws IOException {
+    public Parser(Lexer lexer, Interpreter interpreter, String filename) throws IOException {
         this.lexer = lexer;
+        this.interpreter = interpreter;
         outFile = new FileWriter(filename);
         table = new TokenTable();
-        interpreter = new Interpreter();
         errors = new CompileException();
         blockFirst = new BitSet();
         statementFirst = new BitSet();
@@ -365,15 +365,26 @@ public class Parser {
                     errors.addErrors(12, token.line);
                 } else {
                     Item item = table.get(index);
-                    if (item.type != Type.Procedure) {
-                        try {
-                            interpreter.generate(Code.WRT, 0, 0);
-                        } catch (ParseException error) {
-                            errors.addErrors(error.getMessage(), token.line);
-                        }
-                    } else {
-                        // 输出过程的值
-                        errors.addErrors(35, token.line);
+                    switch (item.type) {
+                        case Procedure:
+                            errors.addErrors(35, token.line);
+                            break;
+                        case Constant:
+                            try {
+                                interpreter.generate(Code.LDC, 0, item.value);
+                                interpreter.generate(Code.WRT, 0, 0);
+                            } catch (ParseException error) {
+                                errors.addErrors(error.getMessage(), token.line);
+                            }
+                            break;
+                        case Variable:
+                            try {
+                                interpreter.generate(Code.LOD, level - item.level, item.address);
+                                interpreter.generate(Code.WRT, 0, 0);
+                            } catch (ParseException error) {
+                                errors.addErrors(error.getMessage(), token.line);
+                            }
+                            break;
                     }
                 }
                 nextToken();

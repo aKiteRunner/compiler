@@ -50,11 +50,13 @@ public class Interpreter {
             switch (instruction.code) {
                 case LDC:
                     // 加载某个数值
-                    runtimeStack[++sp] = instruction.argument;
+                    ++sp;
+                    runtimeStack[sp] = instruction.argument;
                     break;
                 case LOD:
                     // 加载某个标识符对应的值
-                    runtimeStack[++sp] = runtimeStack[base(instruction.level, bp, runtimeStack) + instruction.argument];
+                    ++sp;
+                    runtimeStack[sp] = runtimeStack[base(instruction.level, bp, runtimeStack) + instruction.argument];
                     break;
                 case STO:
                     // 保存某个标识符
@@ -65,7 +67,7 @@ public class Interpreter {
                     runtimeStack[sp + 1] = base(instruction.level, bp, runtimeStack);
                     runtimeStack[sp + 2] = bp;
                     runtimeStack[sp + 3] = pc;
-                    bp = sp;
+                    bp = sp + 1;
                     pc = instruction.argument;
                     break;
                 case INT:
@@ -97,9 +99,9 @@ public class Interpreter {
                     sp--;
                     break;
                 case EXP:
-                    sp = bp;
-                    pc = runtimeStack[sp + 3];
+                    sp = bp - 1;
                     bp = runtimeStack[sp + 2];
+                    pc = runtimeStack[sp + 3];
                     break;
                 case MUS:
                     runtimeStack[sp] = -runtimeStack[sp];
@@ -117,7 +119,8 @@ public class Interpreter {
                     break;
                 case WRT:
                     try {
-                        out.write(runtimeStack[sp]);
+                        out.write(Integer.toString(runtimeStack[sp]) + " ");
+                        out.flush();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -126,6 +129,7 @@ public class Interpreter {
                 case WRL:
                     try {
                         out.write('\n');
+                        out.flush();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

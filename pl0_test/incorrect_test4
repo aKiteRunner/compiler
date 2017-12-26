@@ -1,0 +1,7 @@
+const max1 = 1, max2 = 2;
+procedure p1;;
+begin
+    read(p1);
+    read(max1, max2);
+end
+.

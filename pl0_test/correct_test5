@@ -1,0 +1,12 @@
+const max1 = 1, max2 = 2;
+var i;
+procedure p1;
+    begin
+        if max1 < max2 then
+            write(max1, max2)
+    end;
+begin
+    i := - (i + i) * i - i / (i + (i + i));
+    call p1;
+end
+.

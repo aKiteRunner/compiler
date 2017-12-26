@@ -2,13 +2,13 @@ package compiler;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 
 public class Parser {
     private Lexer lexer;
     private FileWriter outFile;
-    private SymbolTable table;
+    private TokenTable table;
     private Interpreter interpreter;
     private CompileException errors;
     private Token token;
@@ -19,7 +19,7 @@ public class Parser {
     public Parser(Lexer lexer, String filename) throws IOException {
         this.lexer = lexer;
         outFile = new FileWriter(filename);
-        table = new SymbolTable();
+        table = new TokenTable();
         interpreter = new Interpreter();
         errors = new CompileException();
         blockFirst = new BitSet();
@@ -69,21 +69,38 @@ public class Parser {
         return lexer.hasNextToken();
     }
 
-    public void parse() {
+    public void parse() throws CompileException {
         BitSet nextLevel = new BitSet();
         nextLevel.or(blockFirst);
         nextLevel.or(statementFirst);
         nextLevel.set(Symbol.Period.ordinal());
-
-        block(0, nextLevel);
-
+        try {
+            block(0, nextLevel);
+        } catch (NullPointerException error) {
+            errors.addErrors(Collections.singletonList("程序未正常结束"));
+        }
         // 不以句号结尾, 报错
-        if (token.symbol != Symbol.Period) {
+        if (token == null) {
+            errors.addErrors(Collections.singletonList("缺少句号"));
+        }
+        else if (token.symbol != Symbol.Period) {
             errors.addErrors(9, token.line);
         }
 
         table.printTable();
         interpreter.printInstructions(0);
+        if (errors.getErrors().size() != 0) {
+            throw errors;
+        } else {
+            try {
+                for (int i = 0; i < interpreter.arrayPtr; i++) {
+                    outFile.write(interpreter.instructions[i].toString() + "\n");
+                }
+                outFile.close();
+            } catch (IOException error) {
+                System.err.println(error.getMessage());
+            }
+        }
     }
 
     private void block(int level, BitSet follow) {
@@ -103,7 +120,7 @@ public class Parser {
             errors.addErrors(error.getMessage(), token.line);
         }
         //嵌套层数过大
-        if (level > SymbolTable.LEVEL_MAX) {
+        if (level > TokenTable.LEVEL_MAX) {
             errors.addErrors(29, token.line);
         }
         do {
@@ -162,16 +179,10 @@ public class Parser {
                 // 过程后面接分号
                 if (token.symbol == Symbol.SemiColon) {
                     nextToken();
-                    // 进入statement
-                    nextLevel = (BitSet) statementFirst.clone();
-                    nextLevel.set(Symbol.Procedure.ordinal());
-                    test(nextLevel, follow, 6);
                 } else {
                     errors.addErrors(5, token.line);
                 }
             }
-            nextLevel = (BitSet) statementFirst.clone();
-            test(nextLevel, blockFirst, 7);
         } while (blockFirst.get(token.symbol.ordinal()));
 
         Item item = table.get(tablePtr);
@@ -192,15 +203,19 @@ public class Parser {
         nextLevel = (BitSet) follow.clone();
         nextLevel.set(Symbol.SemiColon.ordinal());
         nextLevel.set(Symbol.End.ordinal());
-        statement(level, nextLevel);
-        // 分析完成后，生成操作数为0的opr指令， 用于从分程序返回（对于0层的主程序来说，就是程序运行完成，退出
+        if (statementFirst.get(token.symbol.ordinal())) {
+            statement(level, nextLevel);
+        }
+        // 分析完成后，生成指令， 用于从分程序返回（对于0层的主程序来说，就是程序运行完成，退出
         try {
-            interpreter.generate(Code.OPR, 0, 0);
+            if (level != 0) {
+                interpreter.generate(Code.EXP, 0, 0);
+            } else {
+                interpreter.generate(Code.HLT, 0, 0);
+            }
         } catch (ParseException error) {
             errors.addErrors(error.getMessage(), token.line);
         }
-        nextLevel = new BitSet();
-        test(follow, nextLevel, 8);
         interpreter.printInstructions(interpreterPtr);
         dx = dx0;
         table.tablePtr = tablePtr;
@@ -242,6 +257,11 @@ public class Parser {
         // 'const' ident '=' number
         if (token.symbol == Symbol.Identifier) {
             String id = token.name;
+            int index = table.index(id);
+            //　查看是否有最近出现的一个和它重名, 且在同一层的变量,常量或者过程名
+            if (index != 0 && table.get(index).level == level) {
+                errors.addErrors(36, token.line);
+            }
             nextToken();
             if (token.symbol == Symbol.Equal || token.symbol == Symbol.Assign) {
                 // 如果赋值和等于号写反
@@ -253,7 +273,7 @@ public class Parser {
                     int value = Integer.parseInt(token.name);
                     token.name = id;
                     try {
-                        table.addConstant(token, value);
+                        table.addConstant(token, level, value);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -275,6 +295,11 @@ public class Parser {
     private void variableDeclare(int level) {
         // 'var' ident
         if (token.symbol == Symbol.Identifier) {
+            int index = table.index(token.name);
+            //　查看是否有最近出现的一个和它重名, 且在同一层的变量,常量或者过程名
+            if (index != 0 && table.get(index).level == level) {
+                errors.addErrors(36, token.line);
+            }
             try {
                 table.addVariable(token, level, dx);
                 dx++;
@@ -342,7 +367,7 @@ public class Parser {
                     Item item = table.get(index);
                     if (item.type != Type.Procedure) {
                         try {
-                            interpreter.generate(Code.OPR, 0, 14);
+                            interpreter.generate(Code.WRT, 0, 0);
                         } catch (ParseException error) {
                             errors.addErrors(error.getMessage(), token.line);
                         }
@@ -359,7 +384,7 @@ public class Parser {
         getRightParenthesis(follow);
         // 输出换行符
         try {
-            interpreter.generate(Code.OPR, 0, 15);
+            interpreter.generate(Code.WRL, 0, 0);
         } catch (ParseException error) {
             errors.addErrors(error.getMessage(), token.line);
         }
@@ -392,7 +417,7 @@ public class Parser {
                     Item item = table.get(index);
                     if (item.type == Type.Variable) {
                         try {
-                            interpreter.generate(Code.OPR, 0, 16);
+                            interpreter.generate(Code.RED, 0, 0);
                             interpreter.generate(Code.STO, level - item.level, item.address);
                         } catch (ParseException error) {
                             errors.addErrors(error.getMessage(), token.line);
@@ -572,7 +597,7 @@ public class Parser {
             // Neg 取反
             if (operator == Symbol.Minus) {
                 try {
-                    interpreter.generate(Code.OPR, 0, 1);
+                    interpreter.generate(Code.MUS, 0, 0);
                 } catch (ParseException error) {
                     errors.addErrors(error.getMessage(), token.line);
                 }
@@ -594,9 +619,9 @@ public class Parser {
             try {
                 // 2, 3分别为加减法
                 if (operator == Symbol.Plus) {
-                    interpreter.generate(Code.OPR, 0, 2);
+                    interpreter.generate(Code.ADD, 0, 0);
                 } else {
-                    interpreter.generate(Code.OPR, 0, 3);
+                    interpreter.generate(Code.SUB, 0, 0);
                 }
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
@@ -616,9 +641,9 @@ public class Parser {
             factor(level, nextLevel);
             try {
                 if (operator == Symbol.Star) {
-                    interpreter.generate(Code.OPR, 0, 4);
+                    interpreter.generate(Code.MUL, 0, 0);
                 } else {
-                    interpreter.generate(Code.OPR, 0, 5);
+                    interpreter.generate(Code.DIV, 0, 0);
                 }
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), level);
@@ -643,7 +668,7 @@ public class Parser {
                         break;
                     case Constant:
                         try {
-                            interpreter.generate(Code.LIT, 0, item.value);
+                            interpreter.generate(Code.LDC, 0, item.value);
                         } catch (ParseException error) {
                             errors.addErrors(error.getMessage(), token.line);
                         }
@@ -660,7 +685,7 @@ public class Parser {
         } else if (token.symbol == Symbol.Integer) {
             int value = Integer.parseInt(token.name);
             try {
-                interpreter.generate(Code.LIT, 0, value);
+                interpreter.generate(Code.LDC, 0, value);
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
             }
@@ -687,7 +712,7 @@ public class Parser {
             nextToken();
             expression(level, follow);
             try {
-                interpreter.generate(Code.OPR, 0, 6);
+                interpreter.generate(Code.ODD, 0, 0);
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
             }
@@ -703,16 +728,55 @@ public class Parser {
             expression(level, nextLevel);
             switch (token.symbol) {
                 case Equal:
+                    nextToken();
+                    expression(level, follow);
+                    try {
+                        interpreter.generate(Code.EQL, 0, 0);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
                 case Unequal:
+                    nextToken();
+                    expression(level, follow);
+                    try {
+                        interpreter.generate(Code.NEQ, 0, 0);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
                 case Greater:
+                    nextToken();
+                    expression(level, follow);
+                    try {
+                        interpreter.generate(Code.GRT, 0, 0);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
                 case GreaterEqual:
+                    nextToken();
+                    expression(level, follow);
+                    try {
+                        interpreter.generate(Code.GEQ, 0, 0);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
                 case Less:
+                    nextToken();
+                    expression(level, follow);
+                    try {
+                        interpreter.generate(Code.LSS, 0, 0);
+                    } catch (ParseException error) {
+                        errors.addErrors(error.getMessage(), token.line);
+                    }
+                    break;
                 case LessEqual:
                     nextToken();
                     expression(level, follow);
-                    //13 - 18 => 8 - 13
                     try {
-                        interpreter.generate(Code.OPR, 0, token.symbol.ordinal() - 5);
+                        interpreter.generate(Code.LER, 0, 0);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -720,21 +784,6 @@ public class Parser {
                 default:
                     errors.addErrors(21, token.line);
             }
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-            Lexer lexer = new Lexer("D:\\1234\\workspace\\java\\compiler\\src\\compiler\\pl0_test");
-            lexer.lex();
-            Parser parser = new Parser(lexer, "123");
-            parser.nextToken();
-            parser.parse();
-            System.out.println(parser.errors.getErrors());
-        } catch (IOException e) {
-            System.out.println(e);
-        } catch (CompileException e) {
-            System.out.println(e.getErrors());
         }
     }
 }

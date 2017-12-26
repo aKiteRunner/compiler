@@ -40,7 +40,8 @@ public class CompileException extends Exception {
             "read()中的变量未声明", //32
             "缺少语句", //33
             "向常量或者过程赋值", //34
-            "无法输出过程的值" //35
+            "无法输出过程的值", //35
+            "该标识符重复声明" //36
     };
     private ArrayList<String> errors = new ArrayList<>();
 

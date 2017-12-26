@@ -1,0 +1,21 @@
+const max1 = 1, max2 = 2;
+var v1, v2;
+procedure p1;
+    begin
+        if max1 < max2 then
+            write(max1, max2)
+    end;
+begin
+    v1 := 10;
+    v2 := 0;
+    while v1 > max1 do
+    begin
+        v1 := v1 - 1;
+        read(v1, v2);
+        write(v1, v2);
+    end;
+    repeat
+        v2 := v2 + 1
+    until v2 = max2
+end
+.

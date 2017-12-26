@@ -1,0 +1,6 @@
+var i;
+begin
+call p1;
+i := + i * i +
+end
+.

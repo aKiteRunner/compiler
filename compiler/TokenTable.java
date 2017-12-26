@@ -2,7 +2,7 @@ package compiler;
 
 import java.util.*;
 
-public class SymbolTable {
+public class TokenTable {
     public static final int TABLE_MAX = 1000;
     public static final int SYMBOL_MAX = 12;
     public static final int LEVEL_MAX = 3;
@@ -11,7 +11,7 @@ public class SymbolTable {
     private Item[] table;
 
 
-    public SymbolTable() {
+    public TokenTable() {
         table = new Item[TABLE_MAX];
         tablePtr = 0;
     }
@@ -40,11 +40,12 @@ public class SymbolTable {
         table[tablePtr] = item;
     }
 
-    public void addConstant(Token token, int value) throws ParseException{
+    public void addConstant(Token token, int level, int value) throws ParseException{
         Item item = new Item();
         item.name = token.name;
         item.value = value;
         item.type = Type.Constant;
+        item.level = level;
         add(item);
     }
 

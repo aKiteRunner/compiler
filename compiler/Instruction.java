@@ -17,5 +17,6 @@ public class Instruction {
 }
 
 enum Code {
-    LIT, OPR, LOD, STO, CAL, INT ,JMP, JPC
+    LDC, LOD, STO, CAL, INT ,JMP, JPC, EQL, NEQ, LSS, LER, GRT, GEQ, ADD, SUB, MUL, DIV, MUS, HLT, EXP, RED,
+    WRT, ODD, WRL
 }

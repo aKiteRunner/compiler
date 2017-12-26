@@ -1,7 +1,8 @@
 package compiler;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
 public class Interpreter {
     // 运行栈上限
@@ -29,5 +30,131 @@ public class Interpreter {
             System.out.println(instructions[i]);
         }
         System.out.println();
+    }
+
+    private int base(int l, int b, int[] runtimeStack) {
+        // 通过给定的层次差来获得该层的堆栈帧基址
+        while (l > 0) {
+            b = runtimeStack[b];
+            l--;
+        }
+        return b;
+    }
+
+    public void interpret(BufferedReader in, BufferedWriter out) {
+        int[] runtimeStack = new int[stackSize];
+        int pc = 0, bp = 0, sp = -1;
+        Instruction instruction;
+        do {
+            instruction = instructions[pc++];
+            switch (instruction.code) {
+                case LDC:
+                    // 加载某个数值
+                    runtimeStack[++sp] = instruction.argument;
+                    break;
+                case LOD:
+                    // 加载某个标识符对应的值
+                    runtimeStack[++sp] = runtimeStack[base(instruction.level, bp, runtimeStack) + instruction.argument];
+                    break;
+                case STO:
+                    // 保存某个标识符
+                    runtimeStack[base(instruction.level, bp, runtimeStack) + instruction.argument] = runtimeStack[sp];
+                    sp--;
+                    break;
+                case CAL:
+                    runtimeStack[sp + 1] = base(instruction.level, bp, runtimeStack);
+                    runtimeStack[sp + 2] = bp;
+                    runtimeStack[sp + 3] = pc;
+                    bp = sp;
+                    pc = instruction.argument;
+                    break;
+                case INT:
+                    sp += instruction.argument;
+                    break;
+                case JMP:
+                    pc = instruction.argument;
+                    break;
+                case JPC:
+                    if (runtimeStack[sp] == 0) {
+                        pc = instruction.argument;
+                    }
+                    sp--;
+                    break;
+                case ADD:
+                    runtimeStack[sp - 1] += runtimeStack[sp];
+                    sp--;
+                    break;
+                case SUB:
+                    runtimeStack[sp - 1] -= runtimeStack[sp];
+                    sp--;
+                    break;
+                case MUL:
+                    runtimeStack[sp - 1] *= runtimeStack[sp];
+                    sp--;
+                    break;
+                case DIV:
+                    runtimeStack[sp - 1] /= runtimeStack[sp];
+                    sp--;
+                    break;
+                case EXP:
+                    sp = bp;
+                    pc = runtimeStack[sp + 3];
+                    bp = runtimeStack[sp + 2];
+                    break;
+                case MUS:
+                    runtimeStack[sp] = -runtimeStack[sp];
+                    break;
+                case ODD:
+                    runtimeStack[sp] %= 2;
+                    break;
+                case RED:
+                    sp++;
+                    try {
+                        runtimeStack[sp] = Integer.parseInt(in.readLine().trim());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                case WRT:
+                    try {
+                        out.write(runtimeStack[sp]);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    sp--;
+                    break;
+                case WRL:
+                    try {
+                        out.write('\n');
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                case EQL:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] == runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+                case NEQ:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] != runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+                case GEQ:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] >= runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+                case GRT:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] > runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+                case LER:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] <= runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+                case LSS:
+                    runtimeStack[sp - 1] = runtimeStack[sp - 1] < runtimeStack[sp] ? 1 : 0;
+                    sp--;
+                    break;
+            }
+        } while (instruction.code != Code.HLT);
     }
 }

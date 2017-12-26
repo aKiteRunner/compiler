@@ -1,0 +1,7 @@
+const max1 = 1, max2 = 2;
+var v1, v2, v3;
+procedure p1;;
+procedure p2;
+    procedure p3;;
+;
+.

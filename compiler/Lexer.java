@@ -42,25 +42,22 @@ public class Lexer {
     private String readNumber() throws IOException {
         StringBuilder res = new StringBuilder();
         int c = reader.read();
+        if (c == '0') {
+            // 如果以0开头, 直接返回
+            return "0";
+        }
         while (Character.isDigit(c)) {
             res.append((char) c);
             c = reader.read();
         }
-        // 当读到小数点，且后一个为数字时，其为小数
-        if (c == '.') {
-            if (Character.isDigit((c = reader.read()))) {
-                res.append('.');
-                while (Character.isDigit(c)) {
-                    res.append((char) c);
-                    c = reader.read();
-                }
-            } else {
-                reader.unread(c);
-                c = '.';
-            }
-        }
         reader.unread(c);
-        return res.toString();
+        String s = res.toString();
+        try {
+            Integer.parseInt(s);
+        } catch (NumberFormatException error) {
+            errors.add(String.format("Line %d: %s 这个数太大", line, s));
+        }
+        return s;
     }
 
     private String readLess() throws IOException {

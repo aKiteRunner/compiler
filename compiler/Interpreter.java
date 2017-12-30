@@ -50,7 +50,7 @@ public class Interpreter {
         do {
             instruction = instructions[pc++];
             switch (instruction.code) {
-                case LDC:
+                case LIT:
                     // 加载某个数值
                     ++sp;
                     runtimeStack[sp] = instruction.argument;
@@ -84,81 +84,78 @@ public class Interpreter {
                     }
                     sp--;
                     break;
-                case ADD:
-                    runtimeStack[sp - 1] += runtimeStack[sp];
+                case OPR:
+                    switch (instruction.argument) {
+                        case 0:
+                            sp = bp - 1;
+                            bp = runtimeStack[sp + 2];
+                            pc = runtimeStack[sp + 3];
+                            break;
+                        case 1:
+                            runtimeStack[sp] = -runtimeStack[sp];
+                            break;
+                        case 2:
+                            runtimeStack[sp - 1] += runtimeStack[sp];
+                            sp--;
+                            break;
+                        case 3:
+                            runtimeStack[sp - 1] -= runtimeStack[sp];
+                            sp--;
+                            break;
+                        case 4:
+                            runtimeStack[sp - 1] *= runtimeStack[sp];
+                            sp--;
+                            break;
+                        case 5:
+                            runtimeStack[sp - 1] /= runtimeStack[sp];
+                            sp--;
+                            break;
+                        case 6:
+                            runtimeStack[sp] %= 2;
+                            break;
+                        case 8:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] == runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                        case 9:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] != runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                        case 10:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] < runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                        case 11:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] <= runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                        case 12:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] > runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                        case 13:
+                            runtimeStack[sp - 1] = runtimeStack[sp - 1] >= runtimeStack[sp] ? 1 : 0;
+                            sp--;
+                            break;
+                    }
+                    break;
+                case WRT:
+                    try {
+                        out.write(Integer.toString(runtimeStack[sp]) + "\n");
+                        out.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     sp--;
-                    break;
-                case SUB:
-                    runtimeStack[sp - 1] -= runtimeStack[sp];
-                    sp--;
-                    break;
-                case MUL:
-                    runtimeStack[sp - 1] *= runtimeStack[sp];
-                    sp--;
-                    break;
-                case DIV:
-                    runtimeStack[sp - 1] /= runtimeStack[sp];
-                    sp--;
-                    break;
-                case EXP:
-                    sp = bp - 1;
-                    bp = runtimeStack[sp + 2];
-                    pc = runtimeStack[sp + 3];
-                    break;
-                case MUS:
-                    runtimeStack[sp] = -runtimeStack[sp];
-                    break;
-                case ODD:
-                    runtimeStack[sp] %= 2;
                     break;
                 case RED:
                     sp++;
                     runtimeStack[sp] = scanner.nextInt();
-                    break;
-                case WRT:
-                    try {
-                        out.write(Integer.toString(runtimeStack[sp]) + " ");
-                        out.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    sp--;
-                    break;
-                case WRL:
-                    System.out.println("1");
-                    try {
-                        out.write('\n');
-                        out.flush();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
-                case EQL:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] == runtimeStack[sp] ? 1 : 0;
-                    sp--;
-                    break;
-                case NEQ:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] != runtimeStack[sp] ? 1 : 0;
-                    sp--;
-                    break;
-                case GEQ:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] >= runtimeStack[sp] ? 1 : 0;
-                    sp--;
-                    break;
-                case GRT:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] > runtimeStack[sp] ? 1 : 0;
-                    sp--;
-                    break;
-                case LER:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] <= runtimeStack[sp] ? 1 : 0;
-                    sp--;
-                    break;
-                case LSS:
-                    runtimeStack[sp - 1] = runtimeStack[sp - 1] < runtimeStack[sp] ? 1 : 0;
+                    runtimeStack[base(instruction.level, bp, runtimeStack) + instruction.argument] = runtimeStack[sp];
                     sp--;
                     break;
             }
-        } while (instruction.code != Code.HLT);
+        } while (pc != 0);
     }
 
     public List<Instruction> getInstructions() {

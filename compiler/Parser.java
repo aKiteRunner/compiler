@@ -208,11 +208,7 @@ public class Parser {
         }
         // 分析完成后，生成指令， 用于从分程序返回（对于0层的主程序来说，就是程序运行完成，退出
         try {
-            if (level != 0) {
-                interpreter.generate(Code.EXP, 0, 0);
-            } else {
-                interpreter.generate(Code.HLT, 0, 0);
-            }
+            interpreter.generate(Code.OPR, 0, 0);
         } catch (ParseException error) {
             errors.addErrors(error.getMessage(), token.line);
         }
@@ -371,7 +367,7 @@ public class Parser {
                             break;
                         case Constant:
                             try {
-                                interpreter.generate(Code.LDC, 0, item.value);
+                                interpreter.generate(Code.LIT, 0, item.value);
                                 interpreter.generate(Code.WRT, 0, 0);
                             } catch (ParseException error) {
                                 errors.addErrors(error.getMessage(), token.line);
@@ -393,12 +389,6 @@ public class Parser {
             errors.addErrors(31, token.line);
         }
         getRightParenthesis(follow);
-        // 输出换行符
-        try {
-            interpreter.generate(Code.WRL, 0, 0);
-        } catch (ParseException error) {
-            errors.addErrors(error.getMessage(), token.line);
-        }
     }
 
     private void getRightParenthesis(BitSet follow) {
@@ -428,8 +418,7 @@ public class Parser {
                     Item item = table.get(index);
                     if (item.type == Type.Variable) {
                         try {
-                            interpreter.generate(Code.RED, 0, 0);
-                            interpreter.generate(Code.STO, level - item.level, item.address);
+                            interpreter.generate(Code.RED, level - item.level, item.address);
                         } catch (ParseException error) {
                             errors.addErrors(error.getMessage(), token.line);
                         }
@@ -608,7 +597,7 @@ public class Parser {
             // Neg 取反
             if (operator == Symbol.Minus) {
                 try {
-                    interpreter.generate(Code.MUS, 0, 0);
+                    interpreter.generate(Code.OPR, 0, 1);
                 } catch (ParseException error) {
                     errors.addErrors(error.getMessage(), token.line);
                 }
@@ -630,9 +619,9 @@ public class Parser {
             try {
                 // 2, 3分别为加减法
                 if (operator == Symbol.Plus) {
-                    interpreter.generate(Code.ADD, 0, 0);
+                    interpreter.generate(Code.OPR, 0, 2);
                 } else {
-                    interpreter.generate(Code.SUB, 0, 0);
+                    interpreter.generate(Code.OPR, 0, 3);
                 }
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
@@ -652,9 +641,9 @@ public class Parser {
             factor(level, nextLevel);
             try {
                 if (operator == Symbol.Star) {
-                    interpreter.generate(Code.MUL, 0, 0);
+                    interpreter.generate(Code.OPR, 0, 4);
                 } else {
-                    interpreter.generate(Code.DIV, 0, 0);
+                    interpreter.generate(Code.OPR, 0, 5);
                 }
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), level);
@@ -679,7 +668,7 @@ public class Parser {
                         break;
                     case Constant:
                         try {
-                            interpreter.generate(Code.LDC, 0, item.value);
+                            interpreter.generate(Code.LIT, 0, item.value);
                         } catch (ParseException error) {
                             errors.addErrors(error.getMessage(), token.line);
                         }
@@ -696,7 +685,7 @@ public class Parser {
         } else if (token.symbol == Symbol.Integer) {
             int value = Integer.parseInt(token.name);
             try {
-                interpreter.generate(Code.LDC, 0, value);
+                interpreter.generate(Code.LIT, 0, value);
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
             }
@@ -723,7 +712,7 @@ public class Parser {
             nextToken();
             expression(level, follow);
             try {
-                interpreter.generate(Code.ODD, 0, 0);
+                interpreter.generate(Code.OPR, 0, 6);
             } catch (ParseException error) {
                 errors.addErrors(error.getMessage(), token.line);
             }
@@ -742,7 +731,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.EQL, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 8);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -751,7 +740,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.NEQ, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 9);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -760,7 +749,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.GRT, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 12);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -769,7 +758,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.GEQ, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 13);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -778,7 +767,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.LSS, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 10);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
@@ -787,7 +776,7 @@ public class Parser {
                     nextToken();
                     expression(level, follow);
                     try {
-                        interpreter.generate(Code.LER, 0, 0);
+                        interpreter.generate(Code.OPR, 0, 11);
                     } catch (ParseException error) {
                         errors.addErrors(error.getMessage(), token.line);
                     }
